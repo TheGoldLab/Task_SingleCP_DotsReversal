@@ -1,4 +1,4 @@
-function topNode = SingleCPReversingDots_run(location)
+function topNode = run_task(location)
 %% function [mainTreeNode, datatub] = DBSrun(location)
 %
 %
@@ -64,7 +64,7 @@ end
 
 %% ---- Call the configuration routine
 %
-topNode = SingleCPReversingDots_configure(arglist{:});
+topNode = configure_task(arglist{:});
 
 %% ---- Run it!
 %

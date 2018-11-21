@@ -1,4 +1,4 @@
-function topNode =  SingleCPReversingDots_configure(varargin)
+function topNode =  configure_task(varargin)
 %% function topNode =  SingleCPReversingDots_configure(varargin)
 %
 % This function sets up a Single change point reversing dots experiment. 
