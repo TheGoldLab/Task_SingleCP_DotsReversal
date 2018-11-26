@@ -1,7 +1,7 @@
 classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
    % @class topsTreeNodeTaskSingleCPReversingDots
    %
-   % Single change point Reversing-dots task
+   % Single change point dots-reversal task
    %
    % For standard configurations, call:
    %  topsTreeNodeTaskSingleCPReversingDots.getStandardConfiguration
@@ -151,7 +151,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
       %% Constuctor
       %  Use topsTreeNodeTask method, which can parse the argument list
       %  that can set properties (even those nested in structs)
-      function self = topsTreeNodeTaskSingleCPReversingDots(varargin)
+      function self = topsTreeNodeTaskSingleCPDotsReversal(varargin)
 
          % ---- Make it from the superclass
          %
