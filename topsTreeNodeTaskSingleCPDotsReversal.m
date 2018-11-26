@@ -1,4 +1,4 @@
-classdef topsTreeNodeTaskSingleCPReversingDots < topsTreeNodeTask
+classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
    % @class topsTreeNodeTaskSingleCPReversingDots
    %
    % Single change point Reversing-dots task
