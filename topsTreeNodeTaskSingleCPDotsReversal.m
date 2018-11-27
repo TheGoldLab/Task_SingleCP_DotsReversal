@@ -1,5 +1,5 @@
 classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
-   % @class topsTreeNodeTaskSingleCPReversingDots
+   % @class topsTreeNodeTaskSingleCPDotsReversal
    %
    % Single change point dots-reversal task
    %
@@ -652,7 +652,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                   
          % ---- Get the task object, with optional property/value pairs
          %
-         task = topsTreeNodeTaskSingleCPReversingDots(name, varargin{:});
+         task = topsTreeNodeTaskSingleCPDotsReversal(name, varargin{:});
          
          % ---- Set min trial count
          %
