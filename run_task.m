@@ -1,12 +1,12 @@
-function topNode = DBSrun(location)
-%% function [mainTreeNode, datatub] = DBSrun(location)
+function topNode = run_task(location)
+%% function [mainTreeNode, datatub] = run_task(location)
 %
-% DBSrun = Response-Time Dots
+% run_task = Single Change Point Dots
 %
-% This function configures, initializes, runs, and cleans up a DBS 
+% This function configures, initializes, runs, and cleans up a SingleCP_DotsReversal 
 %  experiment (OR or office)
 %
-% 11/17/18   jig wrote it
+% 11/28/18   aer wrote it
 
 %% ---- Clear globals
 %
@@ -15,7 +15,7 @@ clear globals
 
 %% ---- Configure experiment based on location
 %
-%   locations are 'office' (default), 'OR', or 'debug'
+%   locations are 'psychophys_booth' (default), 'buttons', or 'debug'
 %
 % UIs:
 %  'dotsReadableEyeEyelink'
@@ -27,28 +27,21 @@ clear globals
 %  'dotsReadableHIDGamepad'
 
 if nargin < 1 || isempty(location)
-   location = 'OR';
+   location = 'psychophys_booth';
 end
 
 % add something different
 
 switch location
    
-   case {'or' 'OR'}
+   case {'psychophys_booth'}
       arglist = { ...
          'taskSpecs',            {'VGS' 5 'MGS' 5 'Quest' 40 'SN' 40 'AN' 40}, ...
          'readables',            {'dotsReadableEyeEOG'}, ... 
          'sendTTLs',             true, ...
          };
       
-   case {'orSaccades' 'ORSACCADES'}
-      arglist = { ...
-         'taskSpecs',            {'VGS' 5 'MGS' 5 'VGS' 5 'MGS' 5 'VGS' 5 'MGS' 5}, ...
-         'readables',            {'dotsReadableDummy', 'dotsReadableEyePupilLabs'}, ...
-         'doCalibration',        false, ...
-         'sendTTLs',             true, ...
-         };
-            
+           
    case {'buttons' 'Buttons'}  % Or using buttons
       arglist = { ...
          'taskSpecs',            {'Quest' 40 'SN' 40 'AN' 40}, ...
@@ -56,13 +49,7 @@ switch location
          'readables',            {'dotsReadableHIDButtons'}, ... 
          };
    
-   case {'search' 'Search'}
-      arglist = { ...
-         'taskSpecs',            {'VGS' 200 'NN' 200}, ...
-         'sendTTLs',             true, ...
-         'coherences',           100, ...
-         };
-      
+   
    case {'debug' 'Debug'}
       arglist = { ...
          'taskSpecs',            {'VGS' 1 'MGS' 1 'Quest' 4 'SN' 1 'AN' 1}, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
@@ -81,7 +68,7 @@ end
 
 %% ---- Call the configuration routine
 %
-topNode = DBSconfigure(arglist{:});
+topNode = configure_task(arglist{:});
 
 %% ---- Run it!
 %

@@ -1,7 +1,8 @@
-function topNode =  DBSconfigure(varargin)
-%% function topNode =  DBSconfigure(varargin)
+function topNode =  configure_task(varargin)
+%% function topNode =  configure_task(varargin)
 %
-% This function sets up a DBS experiment. We keep this logic separate from
+% This function sets up a Single Change Point Dots Reversal experiment. We 
+% keep this logic separate from
 % running and cleaning up an experiment because we may want to decide
 % when/how do do those other things on the fly (e.g., add/subtract tasks
 % depending on the subject's motivation, etc).
@@ -14,16 +15,16 @@ function topNode =  DBSconfigure(varargin)
 % Returns:
 %  mainTreeNode ... the topsTreeNode at the top of the hierarchy
 %
-% 11/17/18   jig wrote it
+% 11/28/18   aer wrote it
 
 %% ---- Parse arguments for configuration settings
 %
 % Name of the experiment, which determines where data are are stored
-name = 'DBSStudy';
+name = 'SingleCP_DotsReversal';
 
 % Other defaults
 settings = { ...
-   'taskSpecs',                  {'VGS' 1 'MGS' 1}, ... %'NN' 1 'Quest' 1 'AN' 1 'SN' 1 'NL' 1 'NR' 1}, ...
+   'taskSpecs',                  {'Quest' 1 'CP' 1}, ... 
    'runGUIname',                 'eyeGUI', ...
    'databaseGUIname',            [], ...
    'remoteDrawing',              false, ...
@@ -37,7 +38,7 @@ settings = { ...
    'targetDistance',             10, ...
    'gazeWindowSize',             6, ...
    'gazeWindowDuration',         0.15, ...
-   'saccadeDirections',          0:90:270, ...
+   'saccadeDirections',          [0 180], ...
    'dotDirections',              [0 180], ...
    'referenceRT',                500, ... % for speed feedback   
    'showFeedback',               true, ...   % for graphical feedback
@@ -134,16 +135,16 @@ for ii = 1:2:length(taskSpecs)
       {'settings', 'targetDistance'},   topNode.nodeData{'Settings'}{'targetDistance'}, ...
       {'timing',   'showInstructions'}, topNode.nodeData{'Settings'}{'instructionDuration'}, ...
       'taskID',                         (ii+1)/2, ...
-      'taskTypeID',  find(strcmp(taskSpecs{ii}, {'VGS' 'MGS' 'Quest' 'NN' 'NL' 'NR' 'SN' 'SL' 'SR' 'AN' 'AL' 'AR'}),1)};
+      'taskTypeID',  find(strcmp(taskSpecs{ii}, {'Quest' 'CP'}),1)};
    
    switch taskSpecs{ii}
       
-      case {'VGS' 'MGS'}
+      case {'CP'}
          
-         % Make Saccade task with args
-         task = topsTreeNodeTaskSaccade.getStandardConfiguration(args{:});
+         % Make SingleCP_DotsReversal task with args
+         task = topsTreeNodeTaskRTDots.getStandardConfiguration(args{:});
          task.setIndependentVariableByName('direction', 'value', ...
-            topNode.nodeData{'Settings'}{'saccadeDirections'});
+            topNode.nodeData{'Settings'}{'dotDirections'});
          
       otherwise
          
@@ -154,7 +155,7 @@ for ii = 1:2:length(taskSpecs)
                {'settings' 'referenceRT'}, QuestTask});
          end
          
-         % Make RTDots task with args
+         % Make SingleCP_DotsReversal task with args
          task = topsTreeNodeTaskRTDots.getStandardConfiguration(args{:});
          task.setIndependentVariableByName('direction', 'value', ...
             topNode.nodeData{'Settings'}{'dotDirections'});
