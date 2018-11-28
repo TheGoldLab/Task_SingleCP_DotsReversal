@@ -1,4 +1,4 @@
-classdef topsTreeNodeTaskRTDots < topsTreeNodeTask
+classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
    % @class topsTreeNodeTaskRTDots
    %
    % Response-time dots (RTD) task
@@ -189,7 +189,7 @@ classdef topsTreeNodeTaskRTDots < topsTreeNodeTask
       %% Constuctor
       %  Use topsTreeNodeTask method, which can parse the argument list
       %  that can set properties (even those nested in structs)
-      function self = topsTreeNodeTaskRTDots(varargin)
+      function self = topsTreeNodeTaskSingleCPDotsReversal(varargin)
 
          % ---- Make it from the superclass
          %
@@ -649,17 +649,16 @@ classdef topsTreeNodeTaskRTDots < topsTreeNodeTask
             'N' 'Both directions are equally likely.'     [50 50]};
          
          % For instructions
-         if strcmp(name, 'Quest')
-            name = 'NN';
-         end
+%          if strcmp(name, 'Quest')
+%             name = 'NN';
+%          end
          
          % ---- Set strings, priors based on type
-         %
-         Lsat  = strcmp(name(1), SATsettings(:,1));
-         Lbias = strcmp(name(2), BIASsettings(:,1));
-         task.settings.textStrings = {SATsettings{Lsat, 2}, BIASsettings{Lbias, 2}};
-         task.settings.referenceRT = SATsettings{Lsat, 3};
-         task.setIndependentVariableByName('direction', 'priors', BIASsettings{Lbias, 3});
+         % NOTE: 3 lines below are hard-coded for now, just to get the task
+         % to run. Should be improved in the future
+         task.settings.textStrings = {SATsettings{2, 2}, BIASsettings{3, 2}};
+         task.settings.referenceRT = nan;
+         task.setIndependentVariableByName('direction', 'priors', [50 50]);
       end
    end
 end

@@ -142,7 +142,7 @@ for ii = 1:2:length(taskSpecs)
       case {'CP'}
          
          % Make SingleCP_DotsReversal task with args
-         task = topsTreeNodeTaskRTDots.getStandardConfiguration(args{:});
+         task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
          task.setIndependentVariableByName('direction', 'value', ...
             topNode.nodeData{'Settings'}{'dotDirections'});
          
@@ -156,7 +156,7 @@ for ii = 1:2:length(taskSpecs)
          end
          
          % Make SingleCP_DotsReversal task with args
-         task = topsTreeNodeTaskRTDots.getStandardConfiguration(args{:});
+         task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
          task.setIndependentVariableByName('direction', 'value', ...
             topNode.nodeData{'Settings'}{'dotDirections'});
          
