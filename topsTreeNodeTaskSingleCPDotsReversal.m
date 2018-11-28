@@ -147,7 +147,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
          'dotsReadableHIDKeyboard',    struct( ...
          'start',                      {{@defineEventsFromStruct, struct( ...
          'name',                       {'holdFixation', 'choseLeft', 'choseRight'}, ...
-         'component',                  {'KeyboardSpacebar', 'KeyboardF', 'KeyboardJ'}, ...
+         'component',                  {'KeyboardSpacebar', 'KeyboardLeftArrow', 'KeyboardRightArrow'}, ...
          'isRelease',                  {true, false, false})}}), ...
          ...
          ...   % Gamepad 
@@ -378,7 +378,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
          if self.name(1) == 'S'
             
             % Check current RT relative to the reference value
-            if isa(self.settings.referenceRT, 'topsTreeNodeTaskRTDots')
+            if isa(self.settings.referenceRT, 'topsTreeNodeTaskSingleCPDotsReversal')
                RTRefValue = self.settings.referenceRT.settings.referenceRT;
             else
                RTRefValue = self.settings.referenceRT;
@@ -408,6 +408,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                'sound', self.settings.errorPlayableIndex};
          else
             feedbackArgs = {'text', 'No choice'};
+            feedbackStr = 'No choice';
          end
          
          % --- Show trial feedback in GUI/text window
@@ -624,7 +625,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                   
          % ---- Get the task object, with optional property/value pairs
          %
-         task = topsTreeNodeTaskRTDots(name, varargin{:});
+         task = topsTreeNodeTaskSingleCPDotsReversal(name, varargin{:});
          
          % ---- Set min trial count
          %
