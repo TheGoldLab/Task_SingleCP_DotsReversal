@@ -2,7 +2,8 @@
 	{	
 		"name": "SingleCP_DotsReversal_Task",
 		"type": "git",
-		"url": "https://github.com/aernesto/SingleCP_DotsReversal_Task.git"
+		"url": "https://github.com/aernesto/SingleCP_DotsReversal_Task.git",
+        "update": "never"
 	},
 	{
 		"flavor": "eyeDev",
