@@ -445,26 +445,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % Get current task/trial
             trial = self.getTrial();
             
-            %  Check for RT feedback
-            RTstr = '';
-            if self.name(1) == 'S'
-                
-                % Check current RT relative to the reference value
-                if isa(self.settings.referenceRT, 'topsTreeNodeTaskSingleCPDotsReversal')
-                    RTRefValue = self.settings.referenceRT.settings.referenceRT;
-                else
-                    RTRefValue = self.settings.referenceRT;
-                end
-                
-                if isfinite(RTRefValue)
-                    if trial.RT <= RTRefValue
-                        RTstr = ', in time';
-                    else
-                        RTstr = ', try to decide faster';
-                    end
-                end
-            end
-            
             % Set up feedback based on outcome
             if trial.correct == 1
                 feedbackStr = 'Correct';
