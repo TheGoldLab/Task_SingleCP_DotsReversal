@@ -449,13 +449,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             if trial.correct == 1
                 feedbackStr = 'Correct';
                 feedbackArgs = { ...
-                    'text',  [feedbackStr RTstr], ...
                     'image', self.settings.correctImageIndex, ...
                     'sound', self.settings.correctPlayableIndex};
             elseif trial.correct == 0
                 feedbackStr = 'Error';
                 feedbackArgs = { ...
-                    'text',  [feedbackStr RTstr], ...
                     'image', self.settings.errorImageIndex, ...
                     'sound', self.settings.errorPlayableIndex};
             else
@@ -474,7 +472,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % --- Show trial feedback on the screen
             %
-            self.helpers.feedback.show(feedbackArgs{:});
+            % self.helpers.feedback.show(feedbackArgs{:});
         end
         
         %% Get Quest threshold value(s)
