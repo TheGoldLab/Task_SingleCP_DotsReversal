@@ -66,6 +66,7 @@ switch location
             'displayIndex',         0, ... % 0=small, 1=main
             'remoteDrawing',        false, ...
             'sendTTLs',             false, ...
+            'showFeedback',         0, ... % timeout for feedback
             };
         
     otherwise % office
