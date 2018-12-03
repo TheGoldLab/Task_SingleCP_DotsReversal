@@ -17,7 +17,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
     %
     %  3. Add this as a child to another topsTreeNode
     %
-    % 11/28/18 created by aer
+    % 11/28/18 created by aer / reviewed by jig
     
     properties % (SetObservable) % uncomment if adding listeners
         
@@ -202,7 +202,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
     
     methods
         
-        %% Constuctor
+        %% Constructor
         %  Use topsTreeNodeTask method, which can parse the argument list
         %  that can set properties (even those nested in structs)
         function self = topsTreeNodeTaskSingleCPDotsReversal(varargin)
@@ -267,11 +267,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do before each time you run a trial
         function startTrial(self)
             
-            % ---- Prepare components
-            %
-            self.prepareDrawables();
-            self.prepareStateMachine();
-            
             % ---- check whether a CP will occur in this trial or not
             %
             
@@ -303,11 +298,16 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 end
             end
             
+            self.setTrial(trial);
+            
+            % ---- Prepare components
+            %
+            self.prepareDrawables();
+            self.prepareStateMachine();
+            
             % jig sets the timing in the statelist
             self.stateMachine.editStateByName('showDotsEpoch1', 'timeout', self.timing.dotsDuration1);
             self.stateMachine.editStateByName('switchDots', 'timeout', self.timing.dotsDuration2);
-            
-            self.setTrial(trial);
             
             % ---- Inactivate all of the readable events
             %
@@ -591,7 +591,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             if self.timing.showSmileyFace > 0
                 
                 % Set x,y
-                ensemble.setObjectProperty('x', fpX + sign(cosd(trial.initDirection))*td, 3);
+                ensemble.setObjectProperty('x', fpX + sign(cosd(trial.endDirection))*td, 3);
                 ensemble.setObjectProperty('y', fpY, 3);
             end
             
