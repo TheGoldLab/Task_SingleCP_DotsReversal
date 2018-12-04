@@ -79,13 +79,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'viewingDuration', ...
             'probCP', ...
             'timeCP'}, ...
-            'values',      {[0 180], ...      %initDirection
+            'values',      {[0 180], ...                     %initDirection
             [10 50 100], ...%[0 3.2 6.4 12.8 25.6 51.2], ... %coherence
-            .1:.1:.5, ...                      %viewingDuration
-            .5, ...[.1,.5,.9], ...                    %probCP
-            .2}, ...%[.1,.2,.3]}, ...                 %timeCP
+            .1:.1:.5, ...                                    %viewingDuration
+            .5, ...[.1,.5,.9], ...                           %probCP
+            .2}, ...%[.1,.2,.3]}, ...                        %timeCP
             'priors',      {[], [], [], [], []}, ...
-            'minTrials',   {1, [], [], [], []});
+            'minTrials',   {4, 4, 4, 1, 1});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {'RT', 'choice', 'correct', ...
