@@ -278,20 +278,20 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % if CP time is longer than viewing duration, no CP
             if trial.timeCP >= trial.viewingDuration
                 self.isCP = false;
-                trial.presenceCP = false;
+                trial.presenceCP = 0;
                 trial.endDirection = trial.initDirection;
                 self.timing.dotsDuration1 = trial.viewingDuration;
                 self.timing.dotsDuration2 = 0;
             else
                 if rand < trial.probCP
                     self.isCP = true;
-                    trial.presenceCP = true;
+                    trial.presenceCP = 1.0; % numeric because of FIRA
                     trial.endDirection = self.flipDirection(trial.initDirection);
                     self.timing.dotsDuration1 = trial.timeCP;
                     self.timing.dotsDuration2 = trial.viewingDuration - trial.timeCP;
                 else
                     self.isCP = false;
-                    trial.presenceCP = false;
+                    trial.presenceCP = 0;
                     trial.endDirection = trial.initDirection;
                     self.timing.dotsDuration1 = trial.viewingDuration;
                     self.timing.dotsDuration2 = 0;
