@@ -1,1 +1,3 @@
 data/pilot/*
+*.DS_Store
+data/*
