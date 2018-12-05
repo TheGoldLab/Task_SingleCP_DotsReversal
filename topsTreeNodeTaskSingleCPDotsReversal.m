@@ -680,18 +680,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     <SAT> is 'N' for neutral, 'S' for speed, 'A' for accuracy
         %     <BIAS> is 'N' for neutral, 'L' for left more likely, 'R' for
         %     right more likely
-        function task = getStandardConfiguration(name, minTrialsPerCondition, varargin)
+        function task = getStandardConfiguration(name, varargin)
             
             % ---- Get the task object, with optional property/value pairs
             %
             task = topsTreeNodeTaskSingleCPDotsReversal(name, varargin{:});
-            
-            % ---- Set min trial count
-            %
-            if  nargin >= 2 && ~isempty(minTrialsPerCondition)
-                task.settings.minTrialsPerCondition = minTrialsPerCondition;
-            end
-            
+             
             % ---- Instruction settings, by column:
             %  1. tag (first character of name)
             %  2. Text string #1
