@@ -1,0 +1,3 @@
+somehow data gets written in ~/Psychophysics/Data/SingleCP_DotsReversal/SingleCP_DotsReversal/topsDataLog instead of ~/Psychophysics/Data/SingleCP_DotsReversal/topsDataLog
+
+trials allocation needs to be fixed
