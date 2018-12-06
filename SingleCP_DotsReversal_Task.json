@@ -9,7 +9,8 @@
 		"flavor": "",
 		"name": "Lab-Matlab-Control",
 		"type": "git",
-		"url": "https://github.com/TheGoldLab/Lab-Matlab-Control.git"
+		"url": "https://github.com/TheGoldLab/Lab-Matlab-Control.git",
+	        "update": "never"
 	},
 	{
 		"name": "mgl",
