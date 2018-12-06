@@ -79,13 +79,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'viewingDuration', ...
             'probCP', ...
             'timeCP'}, ...
-            'values',      {[0 180], ...                     %initDirection
-            [30], ...%[0 3.2 6.4 12.8 25.6 51.2], ... %coherence
-            .1:.1:.3, ...                                    %viewingDuration
-            [.2], ...[.1,.5,.9], ...                           %probCP
-            [.2]}, ...%[.1,.2,.3]}, ...                        %timeCP
-            'priors',      {[], [], [], 1, 1}, ...
-            'minTrials',   {1, 1, 4, 1, 1});
+            'values',      {[0 180], ...           %initDirection
+            [0 3.2 6.4 12.8 25.6 51.2 60], ...     %coherence
+            .1:.1:.3, ...                          %viewingDuration
+            .1:.1:.5, ...                          %probCP
+            .1:.1:1.1}, ...                        %timeCP
+            'priors',      {[], [], [], [], []});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {'RT', 'choice', 'correct', ...
@@ -681,18 +680,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     <SAT> is 'N' for neutral, 'S' for speed, 'A' for accuracy
         %     <BIAS> is 'N' for neutral, 'L' for left more likely, 'R' for
         %     right more likely
-        function task = getStandardConfiguration(name, minTrialsPerCondition, varargin)
+        function task = getStandardConfiguration(name, varargin)
             
             % ---- Get the task object, with optional property/value pairs
             %
             task = topsTreeNodeTaskSingleCPDotsReversal(name, varargin{:});
-            
-            % ---- Set min trial count
-            %
-            if  nargin >= 2 && ~isempty(minTrialsPerCondition)
-                task.settings.minTrialsPerCondition = minTrialsPerCondition;
-            end
-            
+             
             % ---- Instruction settings, by column:
             %  1. tag (first character of name)
             %  2. Text string #1
