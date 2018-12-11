@@ -425,13 +425,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             end
         end
         
-        %% Launch first epoch of dots stimulus
+        %% Switch dots direction at change point
         %
         % this function gets called, via its handle, in an fevalable of the
         % state machine. It is the 'entry' function of a state. It does the
         % following: switch direction of dots
         function switchDots(self)
-            % switch dots direction
             trial=self.getTrial();
             self.helpers.stimulusEnsemble.theObject.setObjectProperty(...
                 'direction', trial.endDirection, 4)
