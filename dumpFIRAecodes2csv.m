@@ -1,15 +1,42 @@
-function dumpFIRAecodes2csv(inFilename, outFilename, taskName)
+function dumpFIRAecodes2csv(inFilename, outFilename, taskName, fetchDots)
 % writes the FIRA.ecodes matrix to csv file, with column names
 % ARGS:
 %   inFilename      input filename with .mat extension but without full
 %                   path
-%   outFilename     output filename, including full path and extension
+%   outFilename     output filename, including full path but NOT the extension
 %   taskName        e.g. 'SingleCP_DotsReversal'
+%   fetchDots       boolean. If true, dumps topNode.dotsPositions to a
+%                   separate csv file
 % RETURNS:
-%   Nothing, but creates a file with full path outFilename
+%   Nothing, but creates 1 (or 2 if fetchDots = true) files with full path 
+%   outFilename_FIRA.csv and outFilename_dotsPositions.csv
 
-[~, FIRA] = topsTreeNodeTopNode.getDataFromFile(inFilename, taskName);
+[topNode, FIRA] = topsTreeNodeTopNode.getDataFromFile(inFilename, taskName);
 
 T=array2table(FIRA.ecodes.data, 'VariableNames', FIRA.ecodes.name);
-writetable(T,outFilename,'WriteRowNames',true) 
+writetable(T,[outFilename,'_FIRA.csv'],'WriteRowNames',true)
+
+if fetchDots
+    % columns of following matrix represent the following variables
+    colNames = {...
+        'xpos', ...
+        'ypos', ...
+        'isActive', ...
+        'isCoherent', ...
+        'frameIdx', ...
+        'trialIdx'};
+    fullMatrix = zeros(0,length(colNames));
+    for trial = 1:length(topNode.dotsPositions)
+        dotsPositions = topNode.dotsPositions{trial};
+        numFrames = size(dotsPositions,3);
+        for frame = 1:numFrames
+            numDots = size(dotsPositions,2);
+            fullMatrix(1:numFrames,:) = [...
+                dotsPositions(:,:,frame)',...
+                repmat([frame, trial],numDots,1)]; 
+        end
+    end
+    U=array2table(fullMatrix, 'VariableNames', colNames);
+    writetable(U,[outFilename,'_dotsPositions.csv'],'WriteRowNames',true)
+end
 end
