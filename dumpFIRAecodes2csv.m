@@ -12,7 +12,8 @@ function dumpFIRAecodes2csv(inFilename, outFilename, taskName, fetchDots)
 %   outFilename_FIRA.csv and outFilename_dotsPositions.csv
 
 [topNode, FIRA] = topsTreeNodeTopNode.getDataFromFile(inFilename, taskName);
-
+taskNode = topNode.children{1};
+numTrials=length(taskNode.dotsPositions);
 T=array2table(FIRA.ecodes.data, 'VariableNames', FIRA.ecodes.name);
 writetable(T,[outFilename,'_FIRA.csv'],'WriteRowNames',true)
 
@@ -26,13 +27,18 @@ if fetchDots
         'frameIdx', ...
         'trialIdx'};
     fullMatrix = zeros(0,length(colNames));
-    for trial = 1:length(topNode.dotsPositions)
-        dotsPositions = topNode.dotsPositions{trial};
+    end_block = 0;
+    for trial = 1:numTrials
+        dotsPositions = taskNode.dotsPositions{trial};
         numFrames = size(dotsPositions,3);
         for frame = 1:numFrames
             numDots = size(dotsPositions,2);
-            fullMatrix(1:numFrames,:) = [...
-                dotsPositions(:,:,frame)',...
+            
+            start_block = end_block + 1;
+            end_block = start_block + numDots - 1;
+            
+            fullMatrix(start_block:end_block,:) = [...
+                squeeze(dotsPositions(:,:,frame)'),...
                 repmat([frame, trial],numDots,1)]; 
         end
     end
