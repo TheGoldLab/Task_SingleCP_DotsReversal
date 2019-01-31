@@ -15,7 +15,8 @@ function topNode =  configure_task(varargin)
 % Returns:
 %  mainTreeNode ... the topsTreeNode at the top of the hierarchy
 %
-% 11/28/18   aer wrote it
+% 11/28/18   aer wrote it, based on DBSconfigure.m in
+% Lab-Matlab-Control/tasks/DBSStudy/DBSconfigure.m
 
 %% ---- Parse arguments for configuration settings
 %
@@ -84,9 +85,10 @@ for ii = 1:length(readables)
     
     % Possibly set default gaze window size, duration
     if isa(topNode.helpers.(readables{ii}).theObject, 'dotsReadableEye')
-        topNode.helpers.(readables{ii}).theObject.setGazeWindows( ...
-            topNode.nodeData{'Settings'}{'gazeWindowSize'}, ...
-            topNode.nodeData{'Settings'}{'gazeWindowDuration'});
+      topNode.helpers.(readables{ii}).theObject.gazeMonitor.defaultWindowSize = ...
+         topNode.nodeData{'Settings'}{'gazeWindowSize'};
+      topNode.helpers.(readables{ii}).theObject.gazeMonitor.defaultWindowDuration = ...
+         topNode.nodeData{'Settings'}{'gazeWindowDuration'};
     end
 end
 
