@@ -363,6 +363,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % Show the information
             self.statusStrings = {taskString, trialString};
             self.updateStatus(); % just update the second one
+            
+            % call tic function for the tocDotsOn/tocDotsOff later calls
+            tic;
         end
         
         %% Flip direction of dots
@@ -491,7 +494,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % statelist
         function tocDotsOn(self)
             trial = self.getTrial();
-            tic;
             trial.tocDotsOn = toc;
             self.setTrial(trial);
         end
