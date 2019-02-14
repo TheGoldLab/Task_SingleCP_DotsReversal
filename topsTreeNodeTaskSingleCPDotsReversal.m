@@ -757,16 +757,17 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             delay = 10;
                         
-            gridSize = .1;
             % create a kinetogram with minimal motion features
             clean = dotsDrawableDotKinetogram();
-            clean.stencilNumber = .1;
+            clean.recordDotsPositions = false;
+            clean.diameter = 10;
+            clean.density = 1;
+            clean.stencilNumber = 1;
             clean.pixelSize = 1;
-            clean.diameter = .1;
-            clean.yCenter = gridSize;
-            clean.xCenter = -gridSize;
+            clean.yCenter = 0;
+            clean.xCenter = 0;
             clean.direction = 0;
-            clean.coherence = 1;
+            clean.coherence = 0;
             % Aggrigate the kinetograms into one ensemble
             kinetograms = topsEnsemble('kinetograms');
             kinetograms.addObject(clean);
