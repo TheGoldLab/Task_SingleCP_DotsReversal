@@ -82,9 +82,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'timeCP'}, ...
             'values',      {...
                 [0 180], ...           %initDirection
-                [0 6.4 12.8 25.6], ...     %coherence
-                .1:.1:.5, ...                          %viewingDuration
-                .1, ...                          %probCP
+                [25.6 60], ...     %coherence
+                .5, ...                          %viewingDuration
+                .6, ...                          %probCP
                 .2}, ...                        %timeCP
             'priors',      {[], [], [], [], []});
         
@@ -305,8 +305,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % Get current task/trial
             trial = self.getTrial();
             toLogTrialIndex = trial.trialIndex;
-            ensemble = self.helpers.stimulusEnsemble.theObject;
-            trial.initDirection = ensemble.getObjectProperty('direction',4);
+            %ensemble = self.helpers.stimulusEnsemble.theObject;
+            %initialDirection = ensemble.getObjectProperty('direction',4);
             
             % if CP time is longer than viewing duration, no CP
             if trial.timeCP >= trial.viewingDuration
@@ -843,7 +843,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % to run. Should be improved in the future
             task.settings.textStrings = {SATsettings{2, 2}, BIASsettings{3, 2}};
             task.settings.referenceRT = nan;
-            task.setIndependentVariableByName('initDirection', 'priors', []);
         end
     end
 end
