@@ -147,44 +147,32 @@ for ii = 1:2:length(taskSpecs)
         'taskID',                           (ii+1)/2, ...
         'taskTypeID',  find(strcmp(taskSpecs{ii}, {'Quest' 'CP'}),1)};
     
-    switch taskSpecs{ii}
-        
-        case {'CP'}
-            
-            % Make SingleCP_DotsReversal task with args
-            task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
-            task.setIndependentVariableByName('initDirection', 'value', ...
-                topNode.nodeData{'Settings'}{'dotDirections'});
-            
-        otherwise
-            
-            % If there was a Quest task, use to update coherences in other tasks
-            if ~isempty(QuestTask)
-                args = cat(2, args, ...
-                    {{'settings' 'useQuest'},   QuestTask, ...
-                    {'settings' 'referenceRT'}, QuestTask});
-            end
-            
-            % Make SingleCP_DotsReversal task with args
-            task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
-            task.setIndependentVariableByName('initDirection', 'value', ...
-                topNode.nodeData{'Settings'}{'dotDirections'});
-            
-            % Add special instructions for first dots task
-            if noDots
-                task.settings.textStrings = cat(1, ...
-                    {'When flickering dots appear, decide their overall direction', ...
-                    'of motion, then look at the target in that direction'}, ...
-                    task.settings.textStrings);
-                noDots = false;
-            end
-            
-            % Special case of quest ... use output as coh/RT refs
-            if strcmp(taskSpecs{ii}, 'Quest')
-                QuestTask = task;
-            end
+    % If there was a Quest task, use to update coherences in other tasks
+    if ~isempty(QuestTask)
+        args = cat(2, args, ...
+            {{'settings' 'useQuest'},   QuestTask, ...
+            {'settings' 'referenceRT'}, QuestTask});
     end
     
+    % Make SingleCP_DotsReversal task with args
+    task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
+    task.setIndependentVariableByName('initDirection', 'value', ...
+        topNode.nodeData{'Settings'}{'dotDirections'});
+    
+    % Add special instructions for first dots task
+    if noDots
+        task.settings.textStrings = cat(1, ...
+            {'When flickering dots appear, decide their overall direction', ...
+            'of motion, then look at the target in that direction'}, ...
+            task.settings.textStrings);
+        noDots = false;
+    end
+    
+    % Special case of quest ... use output as coh/RT refs
+    if strcmp(taskSpecs{ii}, 'Quest')
+        QuestTask = task;
+    end
+        
     % Add some fevalables to show instructions/feedback before/after tasks
     if ii == 1
         task.addCall('start', welcome);
