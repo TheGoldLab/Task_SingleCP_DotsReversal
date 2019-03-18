@@ -260,13 +260,23 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 % Update independent variable struct using initial value
                 self.setIndependentVariableByName('coherence', 'values', ...
                     self.getQuestGuess());
+                self.setIndependentVariableByName('probCP', 'values', 0);
+                self.setIndependentVariableByName('viewingDuration', ...
+                    'values', 0.250);
                 
             elseif ~isempty(self.settings.useQuest)
+                % get Quest threshold
+                questThreshold = self.settings.useQuest.getQuestThreshold( ...
+                    self.settings.coherencesFromQuest);
                 
-                % Update independent variable struct using Quest threshold
+                % get coherence value corresponding to 95 pCorrect
+                questHighCoh = self.settings.useQuest.getQuestCoh(.95);
+                
+                % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
-                    self.settings.useQuest.getQuestThreshold( ...
-                    self.settings.coherencesFromQuest));
+                    [0, questThreshold, questHighCoh]);
+                self.setIndependentVariableByName('coherence', 'priors', ...
+                    []);
             end
             
             % ---- Initialize the state machine
@@ -574,8 +584,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 else
                     
                     % Compute PMF with fixed guess and no lapse
-                    cax = (0:0.1:100);
-                    predictedProportions =100*qpPFWeibull(cax', [psiParamsQuest(1,1:3) 0]);
+                    cax = 0:0.1:100;
+                    predictedProportions =100*qpPFWeibull(cax', ...
+                        [psiParamsQuest(1,1:3) 0]);
                     threshold = nans(size(pcors));
                     for ii = 1:length(pcors)
                         Lp = predictedProportions(:,2)>=pcors(ii);
@@ -593,9 +604,24 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %% Get next coherences guess from Quest
         %
         function coh = getQuestGuess(self)
-            
             self.questSettings.recentGuess = qpQuery(self.quest);
             coh = min(100, max(0, 10^(self.questSettings.recentGuess/20)*100));
+        end
+        
+        %% Get coherence value corresponding to any desired percent corr.
+        function desired_coh = getQuestCoh(self, pcorr)
+            % pcorr         is percent correct between 0.5 and 1
+            % desired_coh   is the desired coherence level
+             
+            % Find values from PMF
+            psiParamsIndex = qpListMaxArg(self.quest.posterior);
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:);
+            
+            % Compute PMF with fixed guess and no lapse
+            desired_coh =qpPFWeibullInv(pcorr, psiParamsQuest(1,1:4));
+            
+            % convert back to correct scale (mQUESTPlus uses dB)
+            desired_coh = exp(log(10)*desired_coh/20);
         end
     end
     
