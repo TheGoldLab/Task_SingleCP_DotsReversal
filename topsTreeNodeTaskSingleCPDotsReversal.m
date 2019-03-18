@@ -750,54 +750,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Call utility to set up the state machine
             self.addStateMachine(states, activeList, compositeChildren);
-            
-            % Let's call draw a few times just to check whether mgl
-            % initialization is what causes all the delays in the first few
-            % trials
-            
-            delay = 10;
-                        
-            % create a kinetogram with minimal motion features
-            clean = dotsDrawableDotKinetogram();
-            clean.recordDotsPositions = false;
-            clean.diameter = 10;
-            clean.density = 1;
-            clean.stencilNumber = 1;
-            clean.pixelSize = 1;
-            clean.yCenter = 0;
-            clean.xCenter = 0;
-            clean.direction = 0;
-            clean.coherence = 0;
-            % Aggrigate the kinetograms into one ensemble
-            kinetograms = topsEnsemble('kinetograms');
-            kinetograms.addObject(clean);
-            % automate the task of drawing all the objects
-            %   the static drawFrame() takes a cell array of objects
-            isCell = true;
-            kinetograms.automateObjectMethod( ...
-                'draw', @dotsDrawable.drawFrame, {}, [], isCell);
-            
-            % animate for the duration given above
-            try
-                % get a drawing window
-                %sc=dotsTheScreen.theObject;
-                %sc.reset('displayIndex', 2);
-                %     dotsTheScreen.reset('displayIndex', 2);
-                %     dotsTheScreen.openWindow();
-                
-                % get the objects ready to use the window
-                kinetograms.callObjectMethod(@prepareToDrawInWindow);
-                
-                % let the ensemble animate for a while
-                kinetograms.run(delay);
-                
-                % close the OpenGL drawing window
-                %     dotsTheScreen.closeWindow();
-                
-            catch err
-                dotsTheScreen.closeWindow();
-                rethrow(err)
-            end
         end
     end
     
