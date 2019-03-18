@@ -81,15 +81,19 @@ topNode.addHelpers('feedback');
 % Add readable(s). See topsTaskHelperReadable for details.
 readables = topNode.nodeData{'Settings'}{'readables'};
 for ii = 1:length(readables)
-    topNode.addHelpers('readable', readables{ii}, topNode);
-    
-    % Possibly set default gaze window size, duration
-    if isa(topNode.helpers.(readables{ii}).theObject, 'dotsReadableEye')
-      topNode.helpers.(readables{ii}).theObject.gazeMonitor.defaultWindowSize = ...
+   theHelper = topNode.addReadable('readable', ...
+      topNode.nodeData{'Settings'}{'doRecording'}, ...
+      topNode.nodeData{'Settings'}{'doCalibration'}, ...
+      false, ... % this boolean value cooresponds to the doShow argument in topsTreeNodeTopNode.addReadable()
+      readables{ii});
+      
+   % For readableEye objects, set default gaze window size and duration
+   if isa(theHelper.(readables{ii}).theObject, 'dotsReadableEye')
+      theHelper.(readables{ii}).theObject.gazeMonitor.defaultWindowSize = ...
          topNode.nodeData{'Settings'}{'gazeWindowSize'};
-      topNode.helpers.(readables{ii}).theObject.gazeMonitor.defaultWindowDuration = ...
+      theHelper.(readables{ii}).theObject.gazeMonitor.defaultWindowDuration = ...
          topNode.nodeData{'Settings'}{'gazeWindowDuration'};
-    end
+   end         
 end
 
 % Add writable (TTL out). See topsTaskHelperTTL for details.

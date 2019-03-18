@@ -3,7 +3,7 @@
    <defaults>
       <clockFunction>@mglGetSecs</clockFunction>
       <dOutClassName>['dotsDOut1208FS']</dOutClassName>
-      <dataPath>['~']</dataPath>
+      <dataPath>['/Users/adrian/Documents/MATLAB/projects/SingleCP_DotsReversal_Task/data']</dataPath>
       <imagesPath>[true ]</imagesPath>
       <soundsPath>['~']</soundsPath>
       <tasksPath>['~']</tasksPath>
