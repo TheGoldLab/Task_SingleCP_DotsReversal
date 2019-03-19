@@ -82,8 +82,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'timeCP'}, ...
             'values',      {...
                 [0 180], ...           %initDirection
-                [25.6 60], ...     %coherence
-                .5, ...                          %viewingDuration
+                [0 0 0], ...     %coherence
+                [.4 .5], ...                          %viewingDuration
                 .6, ...                          %probCP
                 .2}, ...                        %timeCP
             'priors',      {[], [], [], [], []});
