@@ -263,7 +263,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     self.getQuestGuess());
                 self.setIndependentVariableByName('probCP', 'values', 0);
                 self.setIndependentVariableByName('viewingDuration', ...
-                    'values', 0.250);
+                    'values', 0.200);
                 
             elseif ~isempty(self.settings.useQuest)
                 % get Quest threshold
@@ -616,7 +616,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
              
             % Find values from PMF
             psiParamsIndex = qpListMaxArg(self.quest.posterior);
-            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:);
+            
+            % I intentionally omit the ; at the end of the line below
+            % to see parameters fitted by Quest at console
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:) 
             
             % Compute PMF with fixed guess and no lapse
             desired_coh =qpPFWeibullInv(pcorr, psiParamsQuest(1,1:4));
