@@ -62,12 +62,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         
         % Quest properties
         questSettings = struct( ...
-            'stimRange',                 20*log10((0:100)/100),   ...
-            'thresholdRange',            20*log10((1:99)/100),     ...
-            'slopeRange',                1:5,      ...
-            'guessRate',                 0.5,      ...
-            'lapseRange',                0.00:0.01:0.05, ...
-            'recentGuess',               []);
+            'stimRange',                 0:100,           ... % coherence levels 
+            'thresholdRange',            0.5:.5:60,       ... % cannot start at 0 with Weibull
+            'slopeRange',                2.5,             ... % we don't estimate the slope
+            'guessRate',                 0.5,             ... % because it is a 2AFC task
+            'lapseRange',                0.00:0.001:0.05, ... % this lapse will affect percent correct at threshold, so we estimate it
+            'recentGuess',               [],              ...
+            'viewingDuration',           .2);             % stimulus duration for Quest (sec)
         
         % Fields below are optional but if found with the given names
         %  will be used to automatically configure the task
@@ -75,17 +76,17 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Array of structures of independent variables, used by makeTrials
         independentVariables = struct( ...
             'name',        {...
-                'initDirection', ...
-                'coherence', ...
+                'initDirection',   ...
+                'coherence',       ...
                 'viewingDuration', ...
-                'probCP', ...
-                'timeCP'}, ...
+                'probCP',          ...
+                'timeCP'},         ...
             'values',      {...
-                [0 180], ...           %initDirection
-                [0 0 0], ...     %coherence
-                .1:.1:.5, ...                          %viewingDuration
-                .5, ...                          %probCP
-                .2}, ...                        %timeCP
+                [0 180],           ... % allowed initial directions
+                [0 0 0],           ... % coherence values
+                .1:.1:.5,          ... % viewingDuration (sec)
+                .5,                ... % probability of CP
+                .2},               ... % time of CP
             'priors',      {[], [], [], [], []});
         
         % dataFieldNames are used to set up the trialData structure
@@ -246,8 +247,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % ---- Set up independent variables if Quest task
             %
-            if strcmp(self.name, 'Quest')
-                
+            if strcmp(self.name, 'Quest') % when we are running the task as Quest node
                 % Initialize and save Quest object
                 self.quest = qpInitialize(qpParams( ...
                     'stimParamsDomainList', { ...
@@ -256,16 +256,16 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     self.questSettings.thresholdRange, ...
                     self.questSettings.slopeRange, ...
                     self.questSettings.guessRate, ...
-                    self.questSettings.lapseRange}));
+                    self.questSettings.lapseRange}, ...
+                    'qpOutcomeF',@(x) qpSimulatedObserver(x,@qpPFStandardWeibull,simulatedPsiParams)));
                 
                 % Update independent variable struct using initial value
                 self.setIndependentVariableByName('coherence', 'values', ...
                     self.getQuestGuess());
                 self.setIndependentVariableByName('probCP', 'values', 0);
                 self.setIndependentVariableByName('viewingDuration', ...
-                    'values', 0.200);
-                
-            elseif ~isempty(self.settings.useQuest)
+                    'values', self.questSettings.viewingDuration);      
+            elseif ~isempty(self.settings.useQuest) % when we are running the task AFTER a Quest node
                 % get Quest threshold
                 questThreshold = self.settings.useQuest.getQuestThreshold( ...
                     self.settings.coherencesFromQuest);
@@ -569,7 +569,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % pcors is list of proportion correct values
         %  if given, find associated coherences from QUEST Weibull
         %  Parameters are: threshold, slope, guess, lapse
-        
+        % NOTE: it is possible to enhance this function by fitting a
+        % psychometric function (with Quest) to the data collected during
+        % the Quest node.
         function threshold = getQuestThreshold(self, pcors)
             
             % Find values from PMF
@@ -579,34 +581,33 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             if ~isempty(psiParamsQuest)
                 
                 if nargin < 2 || isempty(pcors)
-                    
                     % Just return threshold in units of % coh
-                    threshold = psiParamsQuest(1,1);
-                else
-                    
-                    % Compute PMF with fixed guess and no lapse
-                    cax = 0:0.1:100;
-                    predictedProportions =100*qpPFWeibull(cax', ...
-                        [psiParamsQuest(1,1:3) 0]);
-                    threshold = nans(size(pcors));
-                    for ii = 1:length(pcors)
-                        Lp = predictedProportions(:,2)>=pcors(ii);
-                        if any(Lp)
-                            threshold(ii) = cax(find(Lp,1));
-                        end
-                    end
+                    threshold = psiParamsQuest(1);
+%                 else
+%                     
+%                     % Compute PMF with fixed guess and no lapse
+%                     cax = 0:0.1:100;
+%                     predictedProportions =100*qpPFWeibull(cax', ...
+%                         [psiParamsQuest(1,1:3) 0]);
+%                     threshold = nans(size(pcors));
+%                     for ii = 1:length(pcors)
+%                         Lp = predictedProportions(:,2)>=pcors(ii);
+%                         if any(Lp)
+%                             threshold(ii) = cax(find(Lp,1));
+%                         end
+%                     end
                 end
             end
             
             % Convert to % coherence
-            threshold = 10^(threshold./20).*100;
+            %threshold = 10^(threshold./20).*100;
         end
         
         %% Get next coherences guess from Quest
         %
         function coh = getQuestGuess(self)
             self.questSettings.recentGuess = qpQuery(self.quest);
-            coh = min(100, max(0, 10^(self.questSettings.recentGuess/20)*100));
+            coh = min(100, max(0, self.questSettings.recentGuess));
         end
         
         %% Get coherence value corresponding to any desired percent corr.
@@ -625,13 +626,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             desired_coh =qpPFWeibullInv(pcorr, psiParamsQuest(1,1:4));
             
             % convert back to correct scale (mQUESTPlus uses dB)
-            desired_coh = exp(log(10)*desired_coh/20);
+            desired_coh = 10^(desired_coh/20);
         end
         
         %% Change color of fixation symbol to blue
-        function changeFixationColor(self)
+        function changeFixationColor(self, rgbCol)
             ensemble = self.helpers.stimulusEnsemble.theObject;
-            ensemble.setObjectProperty('colors', [0 0 1], 1);
+            ensemble.setObjectProperty('colors', rgbCol, 1);
         end
     end
     
@@ -722,7 +723,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             tocdon = {@tocDotsOn, self};
             tocdoff1 = {@tocDotsOffEpoch1, self};
             tocdoff2 = {@tocDotsOffEpoch2, self};
-            chgfxc = {@changeFixationColor, self};
+            chgfxcb = {@changeFixationColor, self, [0 0 1]}; % set fixation to blue
+            chgfxcr = {@changeFixationColor, self, [1 0 0]}; % set fixation to red
             
             % recall this function's signature from topsTreeNodeTopNode
             % setNextState(self, condition, thisState, nextStateIfTrue, nextStateIfFalse)
@@ -756,11 +758,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'waitForFixation'   gwfxw    chkuif   t.fixationTimeout         {}       'blankNoFeedback' ; ...
                 'holdFixation'      gwfxh    chkuib   t.holdFixation            hfdc     'showTargets'     ; ...
                 'showTargets'       showt    chkuib   t.preDots                 gwts     'preDots'         ; ...
-                'preDots'           chgfxc   {}       0                         tocdon   'showDotsEpoch1'  ; ...
+                'preDots'           chgfxcb   {}       0                        tocdon   'showDotsEpoch1'  ; ...
                 'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           tocdoff1 ''                ; ...
                 'switchDots'        switchd  {}       t.dotsDuration2           tocdoff2 'waitForChoiceFX' ; ...
                 'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           {}       'blank'           ; ...
-                'blank'             {}       {}       0.1                       blanks   'showFeedback'    ; ...
+                'blank'             chgfxcr  {}       0.1                       blanks   'showFeedback'    ; ...
                 'showFeedback'      showfb   {}       t.showFeedback            blanks   'done'            ; ...
                 'blankNoFeedback'   {}       {}       0                         blanks   'done'            ; ...
                 'done'              dnow     {}       t.interTrialInterval      dumpdots ''                ; ...
