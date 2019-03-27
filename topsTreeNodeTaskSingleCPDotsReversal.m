@@ -84,7 +84,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'values',      {...
                 [0 180],           ... % allowed initial directions
                 [0 0 0],           ... % coherence values
-                .1:.1:.5,          ... % viewingDuration (sec)
+                .2:.1:.4,          ... % viewingDuration (sec)
                 .5,                ... % probability of CP
                 .2},               ... % time of CP
             'priors',      {[], [], [], [], []});
