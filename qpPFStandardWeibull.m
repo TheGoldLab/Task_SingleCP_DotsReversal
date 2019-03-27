@@ -80,7 +80,7 @@ if (length(threshold) > 1)
     end 
 else
     for ii = 1:nStim
-        p_success = guess(ii) + (1 - guess(ii) - lapse(ii))*(1-exp(-(stimParams(ii) / threshold)^slope(ii)));
+        p_success = guess + (1 - guess - lapse)*(1-exp(-(stimParams(ii) / threshold)^slope));
         predictedProportions(ii,:) = [1-p_success p_success];
     end 
 end
