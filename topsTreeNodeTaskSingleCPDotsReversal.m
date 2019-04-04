@@ -614,7 +614,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %% Get coherence value corresponding to any desired percent corr.
         function desired_coh = getQuestCoh(self, pcorr)
             % pcorr         is percent correct between 0.5 and 1
-            % desired_coh   is the desired coherence level
+            % desired_coh   is the desired coherence level, in %
              
             % Find values from PMF
             psiParamsIndex = qpListMaxArg(self.quest.posterior);
@@ -624,10 +624,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:) 
             
             % Compute PMF with fixed guess and no lapse
-            desired_coh =qpPFWeibullInv(pcorr, psiParamsQuest(1,1:4));
+            desired_coh =qpPFStandardWeibullInv(pcorr, psiParamsQuest);
             
             % convert back to correct scale (mQUESTPlus uses dB)
-            desired_coh = 10^(desired_coh/20);
+            % desired_coh = 10^(desired_coh/20);
         end
         
         %% Change color of fixation symbol to blue
