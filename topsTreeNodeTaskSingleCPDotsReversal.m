@@ -83,7 +83,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'timeCP'},         ...
             'values',      {...
                 [0 180],           ... % allowed initial directions
-                [0 0 0],           ... % coherence values
+                [10 30 70],           ... % coherence values
                 .2:.1:.4,          ... % viewingDuration (sec)
                 .5,                ... % probability of CP
                 .2},               ... % time of CP
@@ -110,10 +110,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'choiceTime', ...
             'targetOff', ...
             'fixationOff', ...
-            'feedbackOn', ...
-            'numFrames', ...
-            'tocDotsOn', ...
-            'tocDotsOff'};
+            'feedbackOn'};
         
         % here dotsPositions is a 1-by-JJ cell, where JJ is the number of 
         % trials run in the experiment. Each entry of the cell will contain 
@@ -121,7 +118,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         dotsPositions; 
         
         % flag controlling whether to store dots positions or not
-        recordDotsPositions = true;
+        % WARNING: For this to work if set to true, as of commit 17a8987,
+        % it requires the following fork of Lab-Matlab-Control:
+        % https://github.com/aernesto/Lab-Matlab-Control/tree/24097ffd938f8bf9a31012500c6fbadb8e95c522
+        recordDotsPositions = false;
         
         % Drawables settings
         drawable = struct( ...
@@ -308,15 +308,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %
         % Put stuff here that you want to do before each time you run a trial
         function startTrial(self)
-            global toLogNumFrames 
-            global toLogTrialIndex
-            toLogNumFrames = 0;
             % ---- check whether a CP will occur in this trial or not
             %
             
             % Get current task/trial
             trial = self.getTrial();
-            toLogTrialIndex = trial.trialIndex;
             %ensemble = self.helpers.stimulusEnsemble.theObject;
             %initialDirection = ensemble.getObjectProperty('direction',4);
             
@@ -390,10 +386,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %
         % Could add stuff here
         function finishTrial(self)
-            global toLogNumFrames
             % add numFrames field to trial struct
             trial = self.getTrial();
-            trial.numFrames = toLogNumFrames;
             self.setTrial(trial);
             
             % Conditionally update Quest
@@ -759,9 +753,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'waitForFixation'   gwfxw    chkuif   t.fixationTimeout         {}       'blankNoFeedback' ; ...
                 'holdFixation'      gwfxh    chkuib   t.holdFixation            hfdc     'showTargets'     ; ...
                 'showTargets'       showt    chkuib   t.preDots                 gwts     'preDots'         ; ...
-                'preDots'           chgfxcb   {}       0                        tocdon   'showDotsEpoch1'  ; ...
-                'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           tocdoff1 ''                ; ...
-                'switchDots'        switchd  {}       t.dotsDuration2           tocdoff2 'waitForChoiceFX' ; ...
+                'preDots'           chgfxcb   {}       0                        {}       'showDotsEpoch1'  ; ...
+                'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}       ''                ; ...
+                'switchDots'        switchd  {}       t.dotsDuration2           {}       'waitForChoiceFX' ; ...
                 'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           {}       'blank'           ; ...
                 'blank'             chgfxcr  {}       0.1                       blanks   'showFeedback'    ; ...
                 'showFeedback'      showfb   {}       t.showFeedback            blanks   'done'            ; ...
