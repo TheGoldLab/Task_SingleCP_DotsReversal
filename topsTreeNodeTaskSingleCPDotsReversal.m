@@ -68,7 +68,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'guessRate',                 0.5,             ... % because it is a 2AFC task
             'lapseRange',                0.001,           ... % this lapse will affect percent correct at threshold, so we estimate it
             'recentGuess',               [],              ...
-            'viewingDuration',           .2);             % stimulus duration for Quest (sec)
+            'viewingDuration',           .4);             % stimulus duration for Quest (sec)
         
         % Fields below are optional but if found with the given names
         %  will be used to automatically configure the task
