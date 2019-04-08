@@ -166,7 +166,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'stencilNumber',              1,                ...
             'pixelSize',                  6,                ... % Palmer/Huk/Shadlen 2005 use 3, but they have 25.5 px per degree!
             'diameter',                   5,                ...  % as in Palmer/Huk/Shadlen 2005
-            'density',                    16.7,              ... % as in Palmer/Huk/Shadlen 2005
+            'density',                    90,              ... % 16.7 in Palmer/Huk/Shadlen 2005
             'speed',                      5))));                % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
         
         % Readable settings
