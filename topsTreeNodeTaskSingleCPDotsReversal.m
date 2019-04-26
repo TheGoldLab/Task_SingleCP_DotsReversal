@@ -179,7 +179,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'diameter',                   5,                ... % as in Palmer/Huk/Shadlen 2005
             'density',                    90,               ... % 16.7 in Palmer/Huk/Shadlen 2005
             'speed',                      5,                ... % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
-            'recordDotsPositions',        true))));                
+            'recordDotsPositions',        recordDotsPositions)))); % set same value in task and in dotsDrawableDotKinetogram objects               
         
         % Readable settings
         readable = struct( ...
