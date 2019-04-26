@@ -7,7 +7,19 @@
 	},
 	{
 		"name": "Lab_Matlab_Control",
-		"type": "include",
-		"pathPlacement": "append"
+		"type": "git",
+		"pathPlacement": "append",
+		"url": "https://github.com/aernesto/Lab_Matlab_Control.git"
+	},
+	{
+		"name": "mgl",
+		"type": "git",
+		"url": "https://github.com/justingardner/mgl.git"
+	},
+	{
+		"name": "mQUESTPlus",
+		"pathPlacement": "append",
+		"type": "git",
+		"url": "https://github.com/brainardlab/mQUESTPlus.git"
 	}
 ]
