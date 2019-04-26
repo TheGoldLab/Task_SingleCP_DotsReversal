@@ -85,10 +85,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'values',      {...
                 [0 180],           ... % allowed initial directions
                 [10 30 70],           ... % coherence values
-                .2:.1:.4,          ... % viewingDuration (sec)
+                .1:.1:.4,          ... % viewingDuration (sec)
                 .5,                ... % probability of CP
                 .2},               ... % time of CP
-            'priors',      {[], [], [], [], []});
+            'priors',      {[], [], [.2 .2 .3 .3], [], []});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {...
@@ -281,13 +281,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     self.settings.coherencesFromQuest);
                 
                 % get coherence value corresponding to 95 pCorrect
-                questHighCoh = self.settings.useQuest.getQuestCoh(.95);
+                questHighCoh = self.settings.useQuest.getQuestCoh(.98);
                 
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
                     [0, questThreshold, questHighCoh]);
                 self.setIndependentVariableByName('coherence', 'priors', ...
-                    []);
+                    [.3 .4 .3]);
             end
             
             % ---- Initialize the state machine

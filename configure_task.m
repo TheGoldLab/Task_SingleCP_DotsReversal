@@ -26,6 +26,7 @@ name = 'SingleCP_DotsReversal';
 % Other defaults
 settings = { ...
     'taskSpecs',                  {'Quest' 1 'CP' 1}, ...
+    'probCPs',                    [0 0.5], ... % probability of CP in each task node
     'runGUIname',                 'eyeGUI', ...
     'databaseGUIname',            [], ...
     'remoteDrawing',              false, ...
@@ -135,8 +136,11 @@ countdown = {@showMultiple, topNode.helpers.feedback, ...
 taskSpecs = topNode.nodeData{'Settings'}{'taskSpecs'};
 QuestTask = [];
 noDots    = true;
+
+
+% loop through task nodes
+taskCounter = 1;
 for ii = 1:2:length(taskSpecs)
-    
     % Make list of properties to send
     args = {taskSpecs{ii}, ...   
         'trialIterations',                  taskSpecs{ii+1}, ...
@@ -144,8 +148,10 @@ for ii = 1:2:length(taskSpecs)
         {'timing',   'showFeedback'},       topNode.nodeData{'Settings'}{'showFeedback'}, ...
         {'timing',   'showSmileyFace'},     topNode.nodeData{'Settings'}{'showSmileyFace'}, ...
         {'settings', 'recordDotsPositions'},topNode.nodeData{'Settings'}{'recordDotsPositions'}, ...
-        'taskID',                           (ii+1)/2, ...
+        'taskID',                           taskCounter, ...
         'taskTypeID',  find(strcmp(taskSpecs{ii}, {'Quest' 'CP'}),1)};
+    
+    
     
     % If there was a Quest task, use to update coherences in other tasks
     if ~isempty(QuestTask)
@@ -156,8 +162,12 @@ for ii = 1:2:length(taskSpecs)
     
     % Make SingleCP_DotsReversal task with args
     task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
-    task.setIndependentVariableByName('initDirection', 'value', ...
+    task.setIndependentVariableByName('initDirection', 'values', ...
         topNode.nodeData{'Settings'}{'dotDirections'});
+    
+    % set probCP according to task node number
+    task.setIndependentVariableByName('probCP', 'values', ...
+        topNode.nodeData{'Settings'}{'probCPs'}(taskCounter))
     
     % Add special instructions for first dots task
     if noDots
@@ -182,4 +192,7 @@ for ii = 1:2:length(taskSpecs)
     
     % Add as child to the maintask.
     topNode.addChild(task);
+    
+    % update task node counter
+    taskCounter = taskCounter + 1;
 end
