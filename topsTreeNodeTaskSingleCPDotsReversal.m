@@ -35,15 +35,16 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'useQuest',                   [],   ...
             'coherencesFromQuest',        [],   ...
             'possibleDirections',         [0 180],   ...
-            'directionPriors',            [], ... % change For asymmetric priors
+            'directionPriors',            [],   ... % change For asymmetric priors
             'referenceRT',                [],   ...
             'fixationRTDim',              0.4,  ...
-            'targetDistance',             10,    ... % meaning 10 degs to the left and right of fp, as in Palmer/Huk/Shadlen/2005
+            'targetDistance',             10,   ... % meaning 10 degs to the left and right of fp, as in Palmer/Huk/Shadlen/2005
             'textStrings',                '',   ...
             'correctImageIndex',          1,    ...
             'errorImageIndex',            3,    ...
             'correctPlayableIndex',       1,    ...
-            'errorPlayableIndex',         2);
+            'errorPlayableIndex',         2,    ...
+            'recordDotsPositions',        false);   % flag controlling whether to store dots positions or not
         
         % Timing properties
         timing = struct( ...
@@ -53,7 +54,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'holdFixation',              0.2, ...
             'showSmileyFace',            0.5, ...
             'showFeedback',              1.0, ...
-            'interTrialInterval',        1.0, ... % as in Palmer/Huk/Shadlen 2005
+            'interTrialInterval',        1.0, ...          % as in Palmer/Huk/Shadlen 2005
             'preDots',                   [0.2 0.7 4.8],... % truncated exponential time between fixation and dots onset as in Palmer/Huk/Shadlen 2005. Actual code is this one: https://github.com/TheGoldLab/Lab-Matlab-Control/blob/c4bebf2fc40111ca4c58f801bc6f9210d2a824e6/tower-of-psych/foundation/runnable/topsStateMachine.m#L534
             'dotsDuration1',             [],  ...
             'dotsDuration2',             [],  ...
@@ -113,7 +114,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'feedbackOn'};
         
         
-        % empty struct that will later be filled. 
+        % empty struct that will later be filled, only if 
+        % self.settings.recordDotsPositions is true. 
+        %%%%%%%%%%%%%%%%%%%%%%%%
         % Description of fields:
         %  dotsPositions is a 1-by-JJ cell, where JJ is the number of 
         %                trials run in the experiment. Each entry of the 
@@ -127,13 +130,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %                to assign a sequence of dots frames to a
         %                particular trial.
         dotsInfo = struct('dotsPositions', [], 'dumpTime', []);  
-        
-        % flag controlling whether to store dots positions or not
-        % WARNING: For this to work if set to true, as of commit 17a8987,
-        % it requires the following fork of Lab-Matlab-Control:
-        % https://github.com/aernesto/Lab-Matlab-Control/tree/24097ffd938f8bf9a31012500c6fbadb8e95c522
-        recordDotsPositions = false;
-        
+                
         % Drawables settings
         drawable = struct( ...
             ...
@@ -179,7 +176,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'diameter',                   5,                ... % as in Palmer/Huk/Shadlen 2005
             'density',                    90,               ... % 16.7 in Palmer/Huk/Shadlen 2005
             'speed',                      5,                ... % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
-            'recordDotsPositions',        recordDotsPositions)))); % set same value in task and in dotsDrawableDotKinetogram objects               
+            'recordDotsPositions',        false)))); % will be set to self.settings.recordDotsPositions in self.prepareDrawables               
         
         % Readable settings
         readable = struct( ...
@@ -304,7 +301,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             pause(self.timing.waitAfterInstructions);
             
             % pre-allocate cell size to record dots positions and states
-            if self.recordDotsPositions
+            if self.settings.recordDotsPositions
                 self.dotsInfo.dotsPositions = cell(1,length(self.trialIndices));
                 self.dotsInfo.dumpTime = self.dotsInfo.dotsPositions;
             end
@@ -499,7 +496,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % by state I mean whether each dot is active or not on a particular
         % frame, and whether it is coherent or not, on a particular frame
         function dumpDots(self)
-            if self.recordDotsPositions
+            if self.settings.recordDotsPositions
                 self.dotsInfo.dotsPositions{self.trialCount} = ...
                     self.helpers.stimulusEnsemble.theObject.getObjectProperty(...
                     'dotsPositions', 4);
@@ -687,6 +684,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ensemble.setObjectProperty('randBase',  trial.randSeedBase, 4);
             ensemble.setObjectProperty('coherence', trial.coherence, 4);
             ensemble.setObjectProperty('direction', trial.initDirection, 4);
+            ensemble.setObjectProperty('recordDotsPositions', self.settings.recordDotsPositions, 4);
             ensemble.setObjectProperty('colors', [1 0 0], 1); % reset fixation color to red
             % ---- Possibly update smiley face to location of correct target
             %
