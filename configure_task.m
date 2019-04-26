@@ -137,6 +137,7 @@ taskSpecs = topNode.nodeData{'Settings'}{'taskSpecs'};
 QuestTask = [];
 noDots    = true;
 
+probCPs = topNode.nodeData{'Settings'}{'probCPs'};
 
 % loop through task nodes
 taskCounter = 1;
@@ -166,8 +167,7 @@ for ii = 1:2:length(taskSpecs)
         topNode.nodeData{'Settings'}{'dotDirections'});
     
     % set probCP according to task node number
-    task.setIndependentVariableByName('probCP', 'values', ...
-        topNode.nodeData{'Settings'}{'probCPs'}(taskCounter))
+    task.setIndependentVariableByName('probCP', 'values', probCPs(taskCounter))
     
     % Add special instructions for first dots task
     if noDots

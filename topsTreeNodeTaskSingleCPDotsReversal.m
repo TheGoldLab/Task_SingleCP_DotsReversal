@@ -84,11 +84,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'timeCP'},         ...
             'values',      {...
                 [0 180],           ... % allowed initial directions
-                [10 30 70],           ... % coherence values
+                [10 30 70],        ... % coherence values
                 .1:.1:.4,          ... % viewingDuration (sec)
                 .5,                ... % probability of CP
                 .2},               ... % time of CP
-            'priors',      {[], [], [.2 .2 .3 .3], [], []});
+            'priors',      {[], [], [20 20 30 30], [], []});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {...
@@ -287,7 +287,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.setIndependentVariableByName('coherence', 'values', ...
                     [0, questThreshold, questHighCoh]);
                 self.setIndependentVariableByName('coherence', 'priors', ...
-                    [.3 .4 .3]);
+                    [30 40 30]);
             end
             
             % ---- Initialize the state machine
