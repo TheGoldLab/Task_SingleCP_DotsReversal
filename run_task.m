@@ -15,7 +15,7 @@ clear globals
 
 %% ---- Configure experiment based on location
 %
-%   locations are 'pilot'
+%   locations are 'pilot', 'office', 'tutorial'
 %
 % UIs:
 %  'dotsReadableEyeEyelink'
@@ -27,6 +27,17 @@ clear globals
 %  'dotsReadableHIDGamepad'
 
 switch location
+    case {'office' 'Office'}
+        arglist = { ...
+            'taskSpecs',            {'CP' 2}, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
+            'readables',            {'dotsReadableHIDKeyboard'}, ...
+            'displayIndex',         0, ... % 0=small, 1=main, 2=other screen
+            'remoteDrawing',        false, ...
+            'sendTTLs',             false, ...
+            'showFeedback',         0, ... % timeout for feedback
+            'showSmileyFace',       0, ... % timeout for smiley face on correct target
+            };
+        
     case {'pilot' 'Pilot'}
         arglist = { ...
             'taskSpecs',            {'Quest' 30 'CP' 22}, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
