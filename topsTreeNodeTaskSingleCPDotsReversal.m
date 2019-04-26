@@ -112,10 +112,21 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'fixationOff', ...
             'feedbackOn'};
         
-        % here dotsPositions is a 1-by-JJ cell, where JJ is the number of 
-        % trials run in the experiment. Each entry of the cell will contain 
-        % a matrix equal to dotsDrawableDotKinetogram.dotsPositions
-        dotsPositions; 
+        
+        % empty struct that will later be filled. 
+        % Description of fields:
+        %  dotsPositions is a 1-by-JJ cell, where JJ is the number of 
+        %                trials run in the experiment. Each entry of the 
+        %                cell will contain matrix equal to 
+        %                dotsDrawableDotKinetogram.dotsPositions
+        %  dumpTime      is a cell array of times, each computed as
+        %                feval(self.clockFunction).
+        %                The times are computed by the dumpDots() method, 
+        %                once at the end of every trial. They should be
+        %                compared to the 'trialStart' time stamp in order
+        %                to assign a sequence of dots frames to a
+        %                particular trial.
+        dotsInfo = struct('dotsPositions', [], 'dumpTime', []);  
         
         % flag controlling whether to store dots positions or not
         % WARNING: For this to work if set to true, as of commit 17a8987,
@@ -165,9 +176,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'coherenceSTD',               10,               ...
             'stencilNumber',              1,                ...
             'pixelSize',                  6,                ... % Palmer/Huk/Shadlen 2005 use 3, but they have 25.5 px per degree!
-            'diameter',                   5,                ...  % as in Palmer/Huk/Shadlen 2005
-            'density',                    90,              ... % 16.7 in Palmer/Huk/Shadlen 2005
-            'speed',                      5))));                % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
+            'diameter',                   5,                ... % as in Palmer/Huk/Shadlen 2005
+            'density',                    90,               ... % 16.7 in Palmer/Huk/Shadlen 2005
+            'speed',                      5,                ... % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
+            'recordDotsPositions',        true))));                
         
         % Readable settings
         readable = struct( ...
@@ -293,7 +305,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % pre-allocate cell size to record dots positions and states
             if self.recordDotsPositions
-                self.dotsPositions = cell(1,length(self.trialIndices));
+                self.dotsInfo.dotsPositions = cell(1,length(self.trialIndices));
+                self.dotsInfo.dumpTime = self.dotsInfo.dotsPositions;
             end
         end
         
@@ -487,9 +500,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % frame, and whether it is coherent or not, on a particular frame
         function dumpDots(self)
             if self.recordDotsPositions
-                self.dotsPositions{self.trialCount} = ...
+                self.dotsInfo.dotsPositions{self.trialCount} = ...
                     self.helpers.stimulusEnsemble.theObject.getObjectProperty(...
                     'dotsPositions', 4);
+                self.dotsInfo.dumpTime{self.trialCount} = feval(self.clockFunction);
             end
         end
         
