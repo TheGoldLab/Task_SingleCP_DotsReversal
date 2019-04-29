@@ -65,7 +65,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         questSettings = struct( ...
             'stimRange',                 0:100,           ... % coherence levels 
             'thresholdRange',            0.5:.5:60,       ... % cannot start at 0 with Weibull
-            'slopeRange',                2.5,             ... % we don't estimate the slope
+            'slopeRange',                2,             ... % we don't estimate the slope
             'guessRate',                 0.5,             ... % because it is a 2AFC task
             'lapseRange',                0.001,           ... % this lapse will affect percent correct at threshold, so we estimate it
             'recentGuess',               [],              ...
@@ -248,6 +248,86 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self = self@topsTreeNodeTask(varargin{:});
         end
         
+        %% Make trials (overloaded)
+        % this method exists in the super class, but for now, I reimplement
+        % it as I find it to be buggy in the superclass.
+        %
+        %  Utility to make trialData array using array of structs (independentVariables),
+        %     which must be a property of the given task with fields:
+        %
+        %     1. name: string name
+        %     2. values: vector of unique values
+        %     3. priors: vector of priors (or empty for equal priors)
+        %
+        %  trialIterations is number of repeats of each combination of
+        %     independent variables
+        %
+        function makeTrials(self, independentVariables, trialIterations)
+            
+            % if trialIterations arg is not provided or is empty, set it to
+            % 1
+            % TOTEST
+            if nargin < 3 || isempty(trialIterations)
+                trialIterations = 1;
+            end
+            
+            % Loop through to set full set of values for each variable
+            for ii = 1:length(independentVariables)
+                
+                % now do something only if priors field is nonempty
+                %
+                % update values based on priors, if they are given in the
+                % format: [proportion_value_1 proportion_value_2 ... etc]
+                %
+                % check that priors vector has same length as values
+                % vector, and that the sum of the entries in priors is
+                % positive
+                if length(independentVariables(ii).priors) == ...
+                        length(independentVariables(ii).values) && ...
+                        sum(independentVariables(ii).priors) > 0
+                    
+                    % TOTEST
+                    % rescale priors by greatest common divisor
+                    priors = independentVariables(ii).priors;
+                    priors = priors./gcd(sym(priors));
+                    
+                    % TOTEST -- what does this currently do?
+                    % now re-make values array based on priors
+                    values = [];
+                    for jj = 1:length(priors)
+                        values = cat(1, values, repmat( ...
+                            independentVariables(ii).values(jj), priors(jj), 1));
+                    end
+                    
+                    % re-save the values
+                    independentVariables(ii).values = values;
+                end
+            end
+            
+            % TOTEST -- See what this does!
+            % get values as cell array and make ndgrid
+            values = {independentVariables.values};
+            grids  = cell(size(values));
+              [grids{:}] = ndgrid(values{:});
+            
+            % update trialData struct array with "trialIterations" copies of
+            % each trial, defined by unique combinations of the independent
+            % variables
+            ntr = numel(grids{1}) * trialIterations;
+            self.trialData = repmat(self.trialData(1), ntr, 1);
+            [self.trialData.taskID] = deal(self.taskTypeID);
+            trlist = num2cell(1:ntr);
+            [self.trialData.trialIndex] = deal(trlist{:});
+            
+            % loop through the independent variables and set in each trialData
+            % struct. Make sure to repeat each set trialIterations times.
+            for ii = 1:length(independentVariables)
+                values = num2cell(repmat(grids{ii}(:), trialIterations, 1));
+                [self.trialData.(independentVariables(ii).name)] = deal(values{:});
+            end
+        end
+        
+        
         %% Start task (overloaded)
         %
         % Put stuff here that you want to do before each time you run this
@@ -280,8 +360,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 questThreshold = self.settings.useQuest.getQuestThreshold( ...
                     self.settings.coherencesFromQuest);
                 
-                % get coherence value corresponding to 95 pCorrect
+                % get coherence value corresponding to 98 pCorrect
                 questHighCoh = self.settings.useQuest.getQuestCoh(.98);
+                if questHighCoh > 100
+                    questHighCoh = 100;
+                end
                 
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
