@@ -64,7 +64,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Quest properties
         questSettings = struct( ...
             'stimRange',                 0:100,           ... % coherence levels 
-            'thresholdRange',            0.5:.5:60,       ... % cannot start at 0 with Weibull
+            'thresholdRange',            0.5:.5:100,       ... % cannot start at 0 with Weibull
             'slopeRange',                2,             ... % we don't estimate the slope
             'guessRate',                 0.5,             ... % because it is a 2AFC task
             'lapseRange',                0.001,           ... % this lapse will affect percent correct at threshold, so we estimate it
