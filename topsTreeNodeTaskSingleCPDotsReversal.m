@@ -315,7 +315,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % variables
             ntr = numel(grids{1}) * trialIterations;
             self.trialData = repmat(self.trialData(1), ntr, 1);
-            [self.trialData.taskID] = deal(self.taskTypeID);
+            [self.trialData.taskID] = deal(self.taskID);
             trlist = num2cell(1:ntr);
             [self.trialData.trialIndex] = deal(trlist{:});
             
