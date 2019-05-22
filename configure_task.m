@@ -186,8 +186,8 @@ for ii = 1:2:length(taskSpecs)
     % Add some fevalables to show instructions/feedback before/after tasks
     if ii == 1
         task.addCall('start', welcome);
-    else
-        task.addCall('start', countdown);
+%     else
+%         task.addCall('start', countdown);
     end
     
     % Add as child to the maintask.

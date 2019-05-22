@@ -327,6 +327,22 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             end
         end
         
+        %% Self paced break screen
+        function self_paced_break(self)
+            
+            % ---- Check for event
+            %
+            eventName = self.helpers.reader.readEvent({'holdFixation'}, self, 'end_of_break');
+            
+            % Nothing... keep checking
+            while isempty(eventName)
+                self.helpers.feedback.show('text', ...
+                    'Well done! Take a break if you wish. You may start the next chunk by pressing space bar.', ...
+                    'showDuration', 0.1, ...
+                     'blank', false);
+                eventName = self.helpers.reader.readEvent({'holdFixation'}, self, 'end_of_break');
+            end
+        end
         
         %% Start task (overloaded)
         %
@@ -373,9 +389,17 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     [30 40 30]);
             end
             
+            % ---- Self-paced break screen
+            % we offer the subject the possibility to take a break
+            % the subject triggers the start of the task with a key press
+            
+            waitfor(self.self_paced_break())
+            
             % ---- Initialize the state machine
             %
             self.initializeStateMachine();
+            
+
             
             % ---- Show task-specific instructions
             %
