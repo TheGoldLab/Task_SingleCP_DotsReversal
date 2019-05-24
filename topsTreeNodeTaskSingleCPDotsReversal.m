@@ -393,7 +393,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % we offer the subject the possibility to take a break
             % the subject triggers the start of the task with a key press
             
-            waitfor(self.self_paced_break())
+            %waitfor(self.self_paced_break())
             
             % ---- Initialize the state machine
             %
