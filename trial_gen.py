@@ -10,6 +10,8 @@ Example usage:
 """
 import numpy as np
 import pandas as pd
+import json
+import hashlib
 
 ALLOWED_PROB_CP = {0.2, 0.5, 0.8}  # overall probability of a change-point trial
 CP_TIME = 200  # in msec
@@ -19,6 +21,45 @@ MARGINALS_TEMPLATE = {
     'dir': {'left': 0, 'right': 0},
     'cp': {True: 0, False: 0}
 }
+
+
+def check_extension(f, extension):
+    """
+    check that filename has the given extension
+    :param f: (str) filename
+    :param extension: (str) extension with or without the dot. So 'csv', '.csv', 'json', '.json' are all valid
+    :return: asserts that string ends with proper extension
+    """
+    if extension[0] == '.':
+        full_extension = extension
+    else:
+        full_extension = '.' + extension
+
+    assert f[-len(extension):] == extension, f'data filename {f} does not have a {full_extension} extension'
+
+
+def standard_meta_filename(filename):
+    """
+    utility to quickly define the filename for the metadata, given the filename for the data
+    :param filename: (str) path to data file
+    :return: (str) path to metadata file
+    """
+    check_extension(filename, 'csv')
+    return filename[:-4] + '_metadata.json'
+
+
+def md5(fname):
+    """
+    function taken from here
+    https://stackoverflow.com/a/3431838
+    :param fname: filename
+    :return: string of hexadecimal number
+    """
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 
 def validate_marginal_keys(marg_type, marg_dict):
@@ -81,82 +122,164 @@ class Trials:
     """
     class to create data frames of trials
     """
-    def __init__(self, prob_cp, num_trials,
+    def __init__(self,
+                 prob_cp=0,
+                 num_trials=204,
                  seed=1,
                  coh_marginals={0: .4, 'th': .5, 100: .1},
                  vd_marginals={100: .1, 200: .1, 300: .4, 400: .4},
                  dir_marginals={'left': 0.5, 'right': 0.5},
                  max_attempts=10000,
-                 marginal_tolerance=0.05):
-
-        assert 0 < marginal_tolerance < 1
-        self.marginal_tolerance = marginal_tolerance
-
-        # for reproducibility
-        np.random.seed(seed)
-
-        # validate core marginals
-        validate_marginal('coh', coh_marginals)
-        validate_marginal('vd', vd_marginals)
-        validate_marginal('dir', dir_marginals)
-
-        # validate prob_cp and its corresponding marginal
-        assert prob_cp in ALLOWED_PROB_CP
-        self.prob_cp = prob_cp
-        cp_marginals = {False: 1 - self.prob_cp, True: self.prob_cp}
-        validate_marginal('cp', cp_marginals)
-
-        # compute cond_prob_cp (i.e. the probability of a CP, given that it is a long trial)
-        prob_long_trial = 0
-        for k, v in vd_marginals.items():
-            if k > CP_TIME:
-                prob_long_trial += v
-
-        cond_prob_cp = self.prob_cp / prob_long_trial
-
-        assert 0 <= cond_prob_cp <= 1
-        self.cond_prob_cp = cond_prob_cp  # probability of a CP, given that it is a long trial
-
-        self.theoretical_marginals = {
-            'coh': coh_marginals,
-            'vd': vd_marginals,
-            'dir': dir_marginals,
-            'cp': cp_marginals
-        }
-        assert set(self.theoretical_marginals.keys()) == set(MARGINALS_TEMPLATE.keys())
-
+                 marginal_tolerance=0.05,
+                 from_file=None):
         """
-        the following attribute will be set to an actual data frame if generation succeeds with self.check_conditions()
+
+        :param prob_cp: theoretical proba of a CP trials over all trials
+        :param num_trials: number of trials in the data attached to object
+        :param seed: seed used to generate the data
+        :param coh_marginals: marginal probabilities for coherence values, across all trials
+        :param vd_marginals: marginal probabilities for viewing duration values, across all trials
+        :param dir_marginals: marginal probabilities for direction values, across all trials
+        :param max_attempts: max number of iterations to do to try to generate trials with correct statistics
+        :param marginal_tolerance: tolerance in the empirical marginals of the generated trials
+        :param from_file: filename to load data from. If None, data is randomly generated. If a filename is provided,
+                          it should have a .csv extension and a corresponding metadata file with name equal to standard_
+                          meta_filename(filename) should exist. Note that if data and meta_data are loaded from files,
+                          all other kwargs provided to __init__ will be overriden by self.load_from_file()
         """
-        self.empirical_marginals = None
+        if from_file is None:
+            self.loaded_from_file = False
 
-        # build all combinations of independent variables, each comb will correspond to a trial
-        self.combinations = {}  # dict where the values are the joint probabilities
-        for dir_k, dir_val in self.theoretical_marginals['dir'].items():
-            for coh_k, coh_val in self.theoretical_marginals['coh'].items():
-                for vd_k, vd_val in self.theoretical_marginals['vd'].items():
-                    self.combinations[(coh_k, vd_k, dir_k)] = coh_val * vd_val * dir_val
+            assert 0 < marginal_tolerance < 1
+            self.marginal_tolerance = marginal_tolerance
 
-        attempt = 0
-        assert attempt < max_attempts
+            # for reproducibility
+            assert isinstance(seed, int)
+            self.seed = seed
+            np.random.seed(self.seed)
 
-        try_again = True
-        while attempt < max_attempts and try_again:
-            trial_df = self.get_n_trials(num_trials)
-            attempt += 1
+            # validate core marginals
+            validate_marginal('coh', coh_marginals)
+            validate_marginal('vd', vd_marginals)
+            validate_marginal('dir', dir_marginals)
 
-            # try again unless conditions are met
-            try_again = not self.check_conditions(trial_df)
+            # validate prob_cp and its corresponding marginal
+            assert prob_cp in ALLOWED_PROB_CP
+            self.prob_cp = prob_cp
+            cp_marginals = {False: 1 - self.prob_cp, True: self.prob_cp}
+            validate_marginal('cp', cp_marginals)
 
-        if try_again:
-            print(f'after {attempt} attempts, no trial set met the conditions\n'
-                  f'trial generation failed. You may try again with another seed,\n'
-                  f'or increase the max_attempts argument')
-            self.trial_data = None  # generation failed
+            # compute cond_prob_cp (i.e. the probability of a CP, given that it is a long trial)
+            prob_long_trial = 0
+            for k, v in vd_marginals.items():
+                if k > CP_TIME:
+                    prob_long_trial += v
+
+            cond_prob_cp = self.prob_cp / prob_long_trial
+
+            assert 0 <= cond_prob_cp <= 1
+            self.cond_prob_cp = cond_prob_cp  # probability of a CP, given that it is a long trial
+
+            self.theoretical_marginals = {
+                'coh': coh_marginals,
+                'vd': vd_marginals,
+                'dir': dir_marginals,
+                'cp': cp_marginals
+            }
+            assert set(self.theoretical_marginals.keys()) == set(MARGINALS_TEMPLATE.keys())
+
+            """
+            the following attribute will be set to an actual data frame if generation succeeds with self.check_conditions()
+            """
+            self.empirical_marginals = None
+
+            # build all combinations of independent variables, each comb will correspond to a trial
+            self.combinations = {}  # dict where the values are the joint probabilities
+            for dir_k, dir_val in self.theoretical_marginals['dir'].items():
+                for coh_k, coh_val in self.theoretical_marginals['coh'].items():
+                    for vd_k, vd_val in self.theoretical_marginals['vd'].items():
+                        self.combinations[(coh_k, vd_k, dir_k)] = coh_val * vd_val * dir_val
+
+            attempt = 0
+            assert attempt < max_attempts
+
+            try_again = True
+            while attempt < max_attempts and try_again:
+                trial_df = self.get_n_trials(num_trials)
+                attempt += 1
+
+                # try again unless conditions are met
+                try_again = not self.check_conditions(trial_df)
+
+            if try_again:
+                print(f'after {attempt} attempts, no trial set met the conditions\n'
+                      f'trial generation failed. You may try again with another seed,\n'
+                      f'or increase the max_attempts argument')
+                self.trial_data = None  # generation failed
+            else:
+                self.trial_data = trial_df
+
+            self.attempt_number = attempt
         else:
-            self.trial_data = trial_df
+            self.load_from_file(from_file)
 
-        self.attempt_number = attempt
+    @staticmethod
+    def load_meta_data(filename):
+        """
+        load metadata about trials from file
+        :param filename: (str) filename of either the trials data in csv format or its corresponding metadata in json
+                         format. If filename with .csv extension is provided, standard_meta_filename() is invoked
+        :return: (dict) metadata
+        """
+        try:
+            check_extension(filename, 'csv')
+            meta_filename = standard_meta_filename(filename)
+        except AssertionError:
+            try:
+                check_extension(filename, 'json')
+                meta_filename = filename
+            except AssertionError:
+                print(f'file {filename} has neither .csv nor .json extension')
+                raise ValueError
+
+        with open(meta_filename, 'r') as fp:
+            meta_data = json.load(fp)
+        return meta_data
+
+    @staticmethod
+    def md5check_from_metadata(csv_filename, meta_filename=None):
+        """
+        checks whether the data in the csv file corresponds to the MD5 checksum stored in the metadata file
+        :param csv_filename: (str)
+        :param meta_filename: (str)
+        :return: simply asserts equality of checksums
+        """
+        if meta_filename is None:
+            meta_filename = standard_meta_filename(csv_filename)
+        assert Trials.load_meta_data(meta_filename)['csv_md5'] == md5(csv_filename), 'MD5 check failed!'
+        print('MD5 verified!')
+
+    def load_from_file(self, fname, meta_file=None):
+        """
+        load full object from .csv file and its corresponding metadata file
+        :param fname: (str) path to csv file
+        :param meta_file: (str or None) either path to metadatafile or None (default).
+                          If None, standard_meta_filename() is called
+        :return: sets many attributes
+        """
+        if meta_file is None:
+            meta_file = standard_meta_filename(fname)
+        Trials.md5check_from_metadata(fname, meta_filename=meta_file)
+        meta_data = Trials.load_meta_data(meta_file)
+
+        # load data into pandas.DataFrame and attach it as attribute
+        self.trial_data = pd.read_csv(fname)
+
+        # set key-value pairs from metadata as attributes
+        for k, v in meta_data.items():
+            setattr(self, k, v)
+
+        self.loaded_from_file = True
 
     def get_n_trials(self, n):
         rows = []  # will be a list of dicts, where each dict is a pandas.DataFrame row
@@ -195,12 +318,34 @@ class Trials:
 
         return True
 
-    def save_to_csv(self, filename='trials.csv'):
+    def save_to_csv(self, filename, with_meta_data=True):
         if self.trial_data is None:
             print('No data to write')
         else:
+            check_extension(filename, 'csv')
+
             self.trial_data.to_csv(filename, index=False)
+            print(f"file {filename} created")
+            if with_meta_data:
+                meta_filename = standard_meta_filename(filename)
+                meta_dict = {
+                    'seed': self.seed,
+                    'num_trials': len(self.trial_data),
+                    'prob_cp': self.prob_cp,
+                    'cond_prob_cp': self.cond_prob_cp,
+                    'theoretical_marginals': self.theoretical_marginals,
+                    'empirical_marginals': self.empirical_marginals,
+                    'marginal_tolerance': self.marginal_tolerance,
+                    'csv_filename': filename,
+                    'csv_md5': md5(filename)
+                }
+                with open(meta_filename, 'w') as fp:
+                    json.dump(meta_dict, fp, indent=4)
+            print(f"medatadata file {meta_filename} created")
 
 
 if __name__ == '__main__':
+    """
+    creates 10 blocks of trials per probability 
+    """
     pass
