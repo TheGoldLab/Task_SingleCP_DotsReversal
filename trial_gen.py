@@ -2,11 +2,11 @@
 This module is designed to generate trials for our task with the
 correct statistics
 
-
 Example usage:
   >>>> trials = Trials(0.8, 204, marginal_tolerance=0.02)
   >>>> trials.attempt_number
-  >>>> trials.save_to_csv('SOME/PATH/TO/FILE.csv')
+  >>>> trials.save_to_csv('/foo/bar.csv')  # a .json file gets created for meta data
+  >>>> reloaded_trials = Trials(from_file='/foo/bar.csv')  # also loads meta data from .json file
 """
 import numpy as np
 import pandas as pd
@@ -148,6 +148,8 @@ class Trials:
                           all other kwargs provided to __init__ will be overriden by self.load_from_file()
         """
         if from_file is None:
+            # todo: make sure the list of attributes is the same whether loaded from file or not. Right now, csv_md5 at least is missing.
+
             self.loaded_from_file = False
 
             assert 0 < marginal_tolerance < 1
@@ -343,9 +345,12 @@ class Trials:
                     json.dump(meta_dict, fp, indent=4)
             print(f"medatadata file {meta_filename} created")
 
+    def count_conditions(self, ind_vars):
+        # todo: to count number of trials for a given combination of independent variables values
+        pass
 
 if __name__ == '__main__':
     """
-    creates 10 blocks of trials per probability 
+    todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
     pass
