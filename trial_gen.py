@@ -110,8 +110,8 @@ def get_marginals(df):
     tot_trials = len(df)
 
     for indep_var in emp_marginals.keys():
-        for key in emp_marginals[indep_var].keys():
-            emp_marginals[indep_var][key] = len(df[df[indep_var] == key]) / tot_trials
+        for k in emp_marginals[indep_var].keys():
+            emp_marginals[indep_var][k] = len(df[df[indep_var] == k]) / tot_trials
 
         validate_marginal(indep_var, emp_marginals[indep_var])
 
@@ -209,6 +209,12 @@ class Trials:
             while attempt < max_attempts and try_again:
                 trial_df = self.get_n_trials(num_trials)
                 attempt += 1
+
+                """
+                the following line is important because 'coh' column might be interpreted as int if no 'th' value 
+                appears, and this produces a TypeError when filtering against the string 'th'
+                """
+                trial_df.coh = trial_df.coh.astype('category')
 
                 # try again unless conditions are met
                 try_again = not self.check_conditions(trial_df)
@@ -348,6 +354,7 @@ class Trials:
     def count_conditions(self, ind_vars):
         # todo: to count number of trials for a given combination of independent variables values
         pass
+
 
 if __name__ == '__main__':
     """
