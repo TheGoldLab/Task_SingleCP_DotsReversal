@@ -121,6 +121,37 @@ def get_marginals(df):
 class Trials:
     """
     class to create data frames of trials
+
+    Note, this class may be instantiated in two ways, controlled by the from_file kwarg to the __init__ method.
+    These ways result in a slightly distinct attribute list for this class. What should always be true, is that any
+    attribute appearing when the object is 'loaded from file' should also exist when the object is 'generated'.
+    We list below the attributes in these two cases, as of 03 June 2019
+    generated:
+        attempt_number
+        combinations
+        cond_prob_cp
+        csv_filename
+        csv_md5
+        empirical_marginals
+        loaded_from_file
+        marginal_tolerance
+        num_trials
+        prob_cp
+        seed
+        theoretical_marginals
+        trial_data
+    loaded:
+        cond_prob_cp
+        csv_filename
+        csv_md5
+        empirical_marginals
+        loaded_from_file
+        marginal_tolerance
+        num_trials
+        prob_cp
+        seed
+        theoretical_marginals
+        trial_data
     """
     def __init__(self,
                  prob_cp=0,
@@ -148,8 +179,6 @@ class Trials:
                           all other kwargs provided to __init__ will be overriden by self.load_from_file()
         """
         if from_file is None:
-            # todo: make sure the list of attributes is the same whether loaded from file or not. Right now, csv_md5 at least is missing.
-
             self.loaded_from_file = False
 
             assert 0 < marginal_tolerance < 1
@@ -224,10 +253,14 @@ class Trials:
                       f'trial generation failed. You may try again with another seed,\n'
                       f'or increase the max_attempts argument')
                 self.trial_data = None  # generation failed
+                self.num_trials = 0
             else:
                 self.trial_data = trial_df
+                self.num_trials = len(trial_df)
 
             self.attempt_number = attempt
+            self.csv_md5 = None
+            self.csv_filename = None
         else:
             self.load_from_file(from_file)
 
@@ -338,7 +371,7 @@ class Trials:
                 meta_filename = standard_meta_filename(filename)
                 meta_dict = {
                     'seed': self.seed,
-                    'num_trials': len(self.trial_data),
+                    'num_trials': self.num_trials,
                     'prob_cp': self.prob_cp,
                     'cond_prob_cp': self.cond_prob_cp,
                     'theoretical_marginals': self.theoretical_marginals,
