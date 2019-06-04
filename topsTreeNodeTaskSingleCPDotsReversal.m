@@ -237,6 +237,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
     end
     
     methods
+        %% load trials from csv
+        function loadTrialDataFromFiles(self, trial_data, trial_metadata)
+            % load trial data as table
+            % load meta data as ?
+        end
         
         %% Constructor
         %  Use topsTreeNodeTask method, which can parse the argument list
