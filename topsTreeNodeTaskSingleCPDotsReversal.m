@@ -75,20 +75,20 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %  will be used to automatically configure the task
         
         % Array of structures of independent variables, used by makeTrials
-        independentVariables = struct( ...
-            'name',        {...
-                'initDirection',   ...
-                'coherence',       ...
-                'viewingDuration', ...
-                'probCP',          ...
-                'timeCP'},         ...
-            'values',      {...
-                [0 180],           ... % allowed initial directions
-                [10 30 70],        ... % coherence values
-                .1:.1:.4,          ... % viewingDuration (sec)
-                .5,                ... % probability of CP
-                .2},               ... % time of CP
-            'priors',      {[], [], [20 20 30 30], [], []});
+%         independentVariables = struct( ...
+%             'name',        {...
+%                 'initDirection',   ...
+%                 'coherence',       ...
+%                 'viewingDuration', ...
+%                 'probCP',          ...
+%                 'timeCP'},         ...
+%             'values',      {...
+%                 [0 180],           ... % allowed initial directions
+%                 [10 30 70],        ... % coherence values
+%                 .1:.1:.4,          ... % viewingDuration (sec)
+%                 .5,                ... % probability of CP
+%                 .2},               ... % time of CP
+%             'priors',      {[], [], [20 20 30 30], [], []});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {...
@@ -263,68 +263,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     independent variables
         %
         function makeTrials(self, independentVariables, trialIterations)
-            
-            % if trialIterations arg is not provided or is empty, set it to
-            % 1
-            % TOTEST
-            if nargin < 3 || isempty(trialIterations)
-                trialIterations = 1;
-            end
-            
-            % Loop through to set full set of values for each variable
-            for ii = 1:length(independentVariables)
-                
-                % now do something only if priors field is nonempty
-                %
-                % update values based on priors, if they are given in the
-                % format: [proportion_value_1 proportion_value_2 ... etc]
-                %
-                % check that priors vector has same length as values
-                % vector, and that the sum of the entries in priors is
-                % positive
-                if length(independentVariables(ii).priors) == ...
-                        length(independentVariables(ii).values) && ...
-                        sum(independentVariables(ii).priors) > 0
-                    
-                    % TOTEST
-                    % rescale priors by greatest common divisor
-                    priors = independentVariables(ii).priors;
-                    priors = priors./gcd(sym(priors));
-                    
-                    % TOTEST -- what does this currently do?
-                    % now re-make values array based on priors
-                    values = [];
-                    for jj = 1:length(priors)
-                        values = cat(1, values, repmat( ...
-                            independentVariables(ii).values(jj), priors(jj), 1));
-                    end
-                    
-                    % re-save the values
-                    independentVariables(ii).values = values;
-                end
-            end
-            
-            % TOTEST -- See what this does!
-            % get values as cell array and make ndgrid
-            values = {independentVariables.values};
-            grids  = cell(size(values));
-              [grids{:}] = ndgrid(values{:});
-            
-            % update trialData struct array with "trialIterations" copies of
-            % each trial, defined by unique combinations of the independent
-            % variables
-            ntr = numel(grids{1}) * trialIterations;
-            self.trialData = repmat(self.trialData(1), ntr, 1);
-            [self.trialData.taskID] = deal(self.taskID);
-            trlist = num2cell(1:ntr);
-            [self.trialData.trialIndex] = deal(trlist{:});
-            
-            % loop through the independent variables and set in each trialData
-            % struct. Make sure to repeat each set trialIterations times.
-            for ii = 1:length(independentVariables)
-                values = num2cell(repmat(grids{ii}(:), trialIterations, 1));
-                [self.trialData.(independentVariables(ii).name)] = deal(values{:});
-            end
+            %%%%%%%%%%%%%%%%%% 
+            %PUT MY CUSTOM CODE HERE!
+            %
+            %%%%%%%%%%%%%%%%%%
         end
         
         %% Self paced break screen
@@ -349,6 +291,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do before each time you run this
         % task
         function startTask(self)
+            self.trialIterationMethod = 'sequential';  % enforce sequential
+            self.randomizeWhenRepeating = false;
             
             % ---- Set up independent variables if Quest task
             %
