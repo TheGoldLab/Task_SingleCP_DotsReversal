@@ -407,13 +407,16 @@ if __name__ == '__main__':
     assert len(all_vals) == 3
 
     prob_cp_list = [all_vals[last_idx]]
-    print('prob cp list for dual-report blocks')
-    print(prob_cp_list)
 
     for r in range(num_dual_report_blocks - 1):
         new_idxs = list({0, 1, 2} - {last_idx})    # update allowed indices for this block (enforce a transition)
+        print(new_idxs)
         last_idx = new_idxs[np.random.randint(2)]  # pick one of the other two indices at random
+        print(last_idx)
         prob_cp_list.append(all_vals[last_idx])
+
+    print('prob cp list for dual-report blocks')
+    print(prob_cp_list)
 
     count = 0
     for file in filenames:
@@ -421,12 +424,14 @@ if __name__ == '__main__':
         dual_report_block_count = 0
 
         # todo: deal with tutorials
-
+        if file[:3] == 'Tut':
+            pass
         # deal with blocks
         if file == 'Block2.csv':  # Block2 is the standard dots task
             t = Trials(prob_cp=0, num_trials=block_length, seed=count)
+            t.save_to_csv(file)
         elif file[:5] == 'Block': # the other ones are dual-report blocks
             t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
+            t.save_to_csv(file)
             dual_report_block_count += 1
 
-        t.save_to_csv(file)
