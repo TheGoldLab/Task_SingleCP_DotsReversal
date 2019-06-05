@@ -360,4 +360,12 @@ if __name__ == '__main__':
     """
     todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
-    pass
+    num_dual_report_blocks = 15
+    dual_report_start_index = 3
+    filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
+    for idx in range(num_dual_report_blocks):
+        filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
+    
+    
+
+               
