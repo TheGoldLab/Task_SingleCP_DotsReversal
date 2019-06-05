@@ -13,7 +13,7 @@ import pandas as pd
 import json
 import hashlib
 
-ALLOWED_PROB_CP = {0.2, 0.5, 0.8}  # overall probability of a change-point trial
+ALLOWED_PROB_CP = {0, 0.2, 0.5, 0.8}  # overall probability of a change-point trial
 CP_TIME = 200  # in msec
 MARGINALS_TEMPLATE = {
     'coh': {0: 0, 'th': 0, 100: 0},
@@ -395,10 +395,38 @@ if __name__ == '__main__':
     """
     num_dual_report_blocks = 15
     dual_report_start_index = 3
+    block_length = 425  # bank of trials to use for this block
+
     filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
     for idx in range(num_dual_report_blocks):
         filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
-    
-    
 
-               
+    # build random ordering of prob_cp across blocks
+    last_idx = np.random.randint(3)  # draws a number at random in the set {0, 1, 2}
+    all_vals = list(ALLOWED_PROB_CP - {0})
+    assert len(all_vals) == 3
+
+    prob_cp_list = [all_vals[last_idx]]
+    print('prob cp list for dual-report blocks')
+    print(prob_cp_list)
+
+    for r in range(num_dual_report_blocks - 1):
+        new_idxs = list({0, 1, 2} - {last_idx})    # update allowed indices for this block (enforce a transition)
+        last_idx = new_idxs[np.random.randint(2)]  # pick one of the other two indices at random
+        prob_cp_list.append(all_vals[last_idx])
+
+    count = 0
+    for file in filenames:
+        count += 1
+        dual_report_block_count = 0
+
+        # todo: deal with tutorials
+
+        # deal with blocks
+        if file == 'Block2.csv':  # Block2 is the standard dots task
+            t = Trials(prob_cp=0, num_trials=block_length, seed=count)
+        elif file[:5] == 'Block': # the other ones are dual-report blocks
+            t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
+            dual_report_block_count += 1
+
+        t.save_to_csv(file)
