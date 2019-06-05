@@ -1,23 +1,16 @@
 classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
     % @class topsTreeNodeTaskRTDots
     %
-    % Response-time dots (RTD) task
-    %
-    % For standard configurations, call:
-    %  topsTreeNodeTaskRTDots.getStandardConfiguration
-    %
-    % Otherwise:
-    %  1. Create an instance directly:
-    %        task = topsTreeNodeTaskRTDots();
-    %
-    %  2. Set properties. These are required:
-    %        task.screenEnsemble
-    %        task.helpers.readers.theObject
-    %     Others can use defaults
-    %
-    %  3. Add this as a child to another topsTreeNode
+    % recall the sequence of blocks
+    %   Tut1    Tutorial 1
+    %   Quest   Block 1 (Quest)
+    %   Tut2    Tutorial 2
+    %   Block2  Block 2 (standard dots task)
+    %   Tut3    Tutorial 3
+    %   Block3  Blocks 3+ (dual-report task)
     %
     % 11/28/18 created by aer / reviewed by jig
+    % 
     
     properties % (SetObservable) % uncomment if adding listeners
         
@@ -31,7 +24,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     [min mean max]      ... specify as pick from exponential distribution
         %     'indep'             ... specified in self.independentVariables
         settings = struct( ...
-            'minTrialsPerCondition',      10,   ...
             'useQuest',                   [],   ...
             'coherencesFromQuest',        [],   ...
             'possibleDirections',         [0 180],   ...
@@ -61,34 +53,44 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'dotsTimeout',               5.0, ...
             'choiceTimeout',             3.0);
         
+        % settings about the trial sequence to use
+        trialSettings = struct( ...
+            'numTrials',        204, ... % theoretical number of valid trials per block
+            'loadFromFile',     false,      ... % load trial sequence from files?
+            'csvFile',          '',         ... % file of the form filename.csv
+            'jsonFile',         '');        ... % file of the form filename_metadata.json
+        
         % Quest properties
         questSettings = struct( ...
             'stimRange',                 0:100,           ... % coherence levels 
-            'thresholdRange',            0.5:.5:100,       ... % cannot start at 0 with Weibull
-            'slopeRange',                2,             ... % we don't estimate the slope
+            'thresholdRange',            0.5:.5:100,      ... % cannot start at 0 with Weibull
+            'slopeRange',                2,               ... % we don't estimate the slope
             'guessRate',                 0.5,             ... % because it is a 2AFC task
             'lapseRange',                0.001,           ... % this lapse will affect percent correct at threshold, so we estimate it
             'recentGuess',               [],              ...
             'viewingDuration',           .4);             % stimulus duration for Quest (sec)
-        
-        % Fields below are optional but if found with the given names
-        %  will be used to automatically configure the task
-        
+           
         % Array of structures of independent variables, used by makeTrials
-%         independentVariables = struct( ...
-%             'name',        {...
-%                 'initDirection',   ...
-%                 'coherence',       ...
-%                 'viewingDuration', ...
-%                 'probCP',          ...
-%                 'timeCP'},         ...
-%             'values',      {...
-%                 [0 180],           ... % allowed initial directions
-%                 [10 30 70],        ... % coherence values
-%                 .1:.1:.4,          ... % viewingDuration (sec)
-%                 .5,                ... % probability of CP
-%                 .2},               ... % time of CP
-%             'priors',      {[], [], [20 20 30 30], [], []});
+        % NOTE: DO NOT CHANGE THE ORDERING OF THE ENTRIES BELOW!
+        % 1. initDirection
+        % 2. coherence
+        % 3. viewingDuration
+        % 4. condProbCP
+        % 5. timeCP
+        independentVariables = struct( ...
+            'name',        {...
+                'initDirection',   ...
+                'coherence',       ...
+                'viewingDuration', ...
+                'condProbCP',          ...
+                'timeCP'},         ...
+            'values',      {...
+                [0 180],           ... % allowed initial directions
+                [10 30 70],        ... % coherence values, if not a Quest
+                .1:.1:.4,          ... % viewingDuration (sec)
+                .5,                ... % probability of CP, given that the trial is longer than timeCP
+                .2},               ... % time of CP
+            'priors',      {[], [], [], [], []});
         
         % dataFieldNames are used to set up the trialData structure
         trialDataFields = {...
@@ -100,7 +102,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'presenceCP', ...
             'coherence', ...
             'viewingDuration', ...
-            'probCP', ...
+            'condProbCP', ...
             'timeCP', ...
             'randSeedBase', ...
             'fixationOn', ...
@@ -223,7 +225,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'component',                  {'auto_1'})}}))));
     end
     
-    properties (SetAccess = protected)
+    properties (SetAccess = protected)      
         
         % The quest object
         quest;
@@ -236,14 +238,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         targetDistance;
     end
     
-    methods
-        %% load trials from csv
-        function loadTrialDataFromFiles(self, trial_data, trial_metadata)
-            % load trial data as table
-            
-            % load meta data as ?
-        end
-        
+    methods       
         %% Constructor
         %  Use topsTreeNodeTask method, which can parse the argument list
         %  that can set properties (even those nested in structs)
@@ -269,10 +264,144 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     independent variables
         %
         function makeTrials(self, independentVariables, trialIterations)
-            %%%%%%%%%%%%%%%%%% 
-            %PUT MY CUSTOM CODE HERE!
-            %
-            %%%%%%%%%%%%%%%%%%
+            % 
+            if self.trialSettings.loadFromFile
+                trialsTable = ...
+                    readtable(self.trialSettings.csvFile);
+                metaData = ...
+                    loadjson(self.trialSettings.jsonFile);
+                
+                % set values that are common to all trials
+                self.trialSettings.numTrials = self.trialIterations;
+                ntr = self.trialSettings.numTrials;
+                
+                % produce copies of trialData struct to render it ntr x 1
+                self.trialData = repmat(self.trialData(1), ntr, 1);
+                
+                % taskID
+                [self.trialData.taskID] = deal(self.taskID);
+                
+                % condProbCP
+                [self.trialData.condProbCP] = ...
+                    deal(metaData.cond_prob_cp);
+                
+                % timeCP
+                [self.trialData.timeCP] = ...
+                    deal(self.independentVariables(5).values(1));
+                
+                trlist = num2cell(1:ntr);
+                
+                % trialIndex
+                [self.trialData.trialIndex] = deal(trlist{:});
+                
+                % set values that are specific to each trial
+                for tr = 1:ntr
+                    
+                    % initDirection
+                    if strcmp(trialsTable.dir(tr), 'left')
+                        self.trialData(tr).initDirection = 180;
+                    else
+                        self.trialData(tr).initDirection = 0;
+                    end
+                    
+                    % endDirection and presenceCP
+                    if strcmp(trialsTable.cp(tr), 'True')
+                        self.trialData(tr).endDirection = ...
+                            self.flipDirection( ...
+                                self.trialData(tr).initDirection);
+                        self.trialData(tr).presenceCP = 1.0;  % numeric for FIRA
+                    else
+                        self.trialData(tr).endDirection = ...
+                                self.trialData(tr).initDirection;
+                        self.trialData(tr).presenceCP = 0;
+                    end
+                    
+                    % coherence (3 possible values)
+                    
+                    cohMetaData = trialsTable.coh(tr);
+                    if isnumeric(cohMetaData)
+                        cohMetaData = num2str(cohMetaData);
+                    end
+                    if strcmp(cohMetaData, '0')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(1);
+                    elseif strcmp(cohMetaData, 'th')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(2);
+                    elseif strcmp(cohMetaData, '100')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(3);
+                    end
+                        
+                    % viewingDuration
+                    self.trialData(tr).viewingDuration = ...
+                        trialsTable.vd(tr) / 1000;
+
+                end
+                
+            % we only use the old makeTrials() for the Quest node
+            elseif strcmp(self.name, 'Quest') 
+                % if trialIterations arg is not provided or is empty, set it to
+                % 1
+                if nargin < 3 || isempty(trialIterations)
+                    trialIterations = 1;
+                end
+
+                % Loop through to set full set of values for each variable
+                for ii = 1:length(independentVariables)
+
+                    % now do something only if priors field is nonempty
+                    %
+                    % update values based on priors, if they are given in the
+                    % format: [proportion_value_1 proportion_value_2 ... etc]
+                    %
+                    % check that priors vector has same length as values
+                    % vector, and that the sum of the entries in priors is
+                    % positive
+                    if length(independentVariables(ii).priors) == ...
+                            length(independentVariables(ii).values) && ...
+                            sum(independentVariables(ii).priors) > 0
+
+                        % TOTEST
+                        % rescale priors by greatest common divisor
+                        priors = independentVariables(ii).priors;
+                        priors = priors./gcd(sym(priors));
+
+                        % TOTEST -- what does this currently do?
+                        % now re-make values array based on priors
+                        values = [];
+                        for jj = 1:length(priors)
+                            values = cat(1, values, repmat( ...
+                                independentVariables(ii).values(jj), priors(jj), 1));
+                        end
+
+                        % re-save the values
+                        independentVariables(ii).values = values;
+                    end
+                end
+
+                % get values as cell array and make ndgrid
+                values = {independentVariables.values};
+                grids  = cell(size(values));
+                  [grids{:}] = ndgrid(values{:});
+
+                % update trialData struct array with "trialIterations" copies of
+                % each trial, defined by unique combinations of the independent
+                % variables
+                ntr = numel(grids{1}) * trialIterations;
+                self.trialData = repmat(self.trialData(1), ntr, 1);
+                [self.trialData.taskID] = deal(self.taskID);
+                trlist = num2cell(1:ntr);
+                [self.trialData.trialIndex] = deal(trlist{:});
+                [self.trialData.presenceCP] = deal(0);
+
+                % loop through the independent variables and set in each trialData
+                % struct. Make sure to repeat each set trialIterations times.
+                for ii = 1:length(independentVariables)
+                    values = num2cell(repmat(grids{ii}(:), trialIterations, 1));
+                    [self.trialData.(independentVariables(ii).name)] = deal(values{:});
+                end
+            end
         end
         
         %% Self paced break screen
@@ -318,7 +447,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 % Update independent variable struct using initial value
                 self.setIndependentVariableByName('coherence', 'values', ...
                     self.getQuestGuess());
-                self.setIndependentVariableByName('probCP', 'values', 0);
+                self.setIndependentVariableByName('condProbCP', 'values', 0);
                 self.setIndependentVariableByName('viewingDuration', ...
                     'values', self.questSettings.viewingDuration);      
             elseif ~isempty(self.settings.useQuest) % when we are running the task AFTER a Quest node
@@ -384,28 +513,17 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             %initialDirection = ensemble.getObjectProperty('direction',4);
             
             % if CP time is longer than viewing duration, no CP
-            if trial.timeCP >= trial.viewingDuration
+
+            if trial.presenceCP
+                self.isCP = true;
+                self.timing.dotsDuration1 = trial.timeCP;
+                self.timing.dotsDuration2 = trial.viewingDuration - trial.timeCP;
+            else
                 self.isCP = false;
-                trial.presenceCP = 0;
-                trial.endDirection = trial.initDirection;
                 self.timing.dotsDuration1 = trial.viewingDuration;
                 self.timing.dotsDuration2 = 0;
-            else
-                if rand < trial.probCP
-                    self.isCP = true;
-                    trial.presenceCP = 1.0; % numeric because of FIRA
-                    trial.endDirection = self.flipDirection(trial.initDirection);
-                    self.timing.dotsDuration1 = trial.timeCP;
-                    self.timing.dotsDuration2 = trial.viewingDuration - trial.timeCP;
-                else
-                    self.isCP = false;
-                    trial.presenceCP = 0;
-                    trial.endDirection = trial.initDirection;
-                    self.timing.dotsDuration1 = trial.viewingDuration;
-                    self.timing.dotsDuration2 = 0;
-                end
             end
-            
+
             self.setTrial(trial);
             
             % ---- Prepare components
