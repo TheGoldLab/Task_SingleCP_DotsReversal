@@ -240,6 +240,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %% load trials from csv
         function loadTrialDataFromFiles(self, trial_data, trial_metadata)
             % load trial data as table
+            
             % load meta data as ?
         end
         
