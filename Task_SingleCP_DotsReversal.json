@@ -9,10 +9,5 @@
 		"name": "Lab_Matlab_Control",
 		"type": "include",
 		"pathPlacement": "append"
-	},
-    {
-        "name": "matlab-json",
-        "type": "git",
-        "url": "https://github.com/kyamagu/matlab-json"
-    }
+	}
 ]
