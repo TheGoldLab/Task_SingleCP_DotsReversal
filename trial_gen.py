@@ -393,7 +393,16 @@ if __name__ == '__main__':
     """
     todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
+    all_vals = list(ALLOWED_PROB_CP - {0})
+
+    # number of blocks in total for the dual-report task
     num_dual_report_blocks = 15
+
+    # number of blocks to enforce for each prob_cp value (other than 0)
+    # ensure the latter divides the former
+    assert np.mod(num_dual_report_blocks, len(all_vals)) == 0
+    num_blocks_single_prob_cp = num_dual_report_blocks / len(all_vals)
+
     dual_report_start_index = 3
     block_length = 425  # bank of trials to use for this block
 
@@ -401,37 +410,69 @@ if __name__ == '__main__':
     for idx in range(num_dual_report_blocks):
         filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
 
-    # build random ordering of prob_cp across blocks
-    last_idx = np.random.randint(3)  # draws a number at random in the set {0, 1, 2}
-    all_vals = list(ALLOWED_PROB_CP - {0})
-    assert len(all_vals) == 3
+    def gen_rand_prob_cp_seq(cp_vals, tot_num_blocks):
+        """
+        Generates a random sequence of prob_cp values to assign to each block.
+        In effect, samples a path from a len(cp_vals)-state Discrete Time Markov Chain
+        where the prob of transitioning from one state to itself is 0 for all states,
+        and the probability of transitioning from one state to any other state is uniform.
+        :param cp_vals: list of possible prob_cp values
+        :param tot_num_blocks: total number of blocks
+        :return: list of prob_cp values
+        """
+        # build random ordering of prob_cp across blocks
+        last_idx = np.random.randint(3)  # draws a number at random in the set {0, 1, 2}
 
-    prob_cp_list = [all_vals[last_idx]]
+        num_vals = len(cp_vals)
+        val_idxs = {i for i in range(num_vals)}
 
-    for r in range(num_dual_report_blocks - 1):
-        new_idxs = list({0, 1, 2} - {last_idx})    # update allowed indices for this block (enforce a transition)
-        print(new_idxs)
-        last_idx = new_idxs[np.random.randint(2)]  # pick one of the other two indices at random
-        print(last_idx)
-        prob_cp_list.append(all_vals[last_idx])
+        prob_cp_list = [cp_vals[last_idx]]
 
-    print('prob cp list for dual-report blocks')
-    print(prob_cp_list)
+        for r in range(tot_num_blocks - 1):
+            new_idxs = list(val_idxs - {last_idx})    # update allowed indices for this block (enforce a transition)
+            last_idx = new_idxs[np.random.randint(num_vals - 1)]  # pick one of the other two indices at random
+            prob_cp_list.append(all_vals[last_idx])
 
-    count = 0
-    for file in filenames:
-        count += 1
-        dual_report_block_count = 0
+        return prob_cp_list
 
-        # todo: deal with tutorials
-        if file[:3] == 'Tut':
-            pass
-        # deal with blocks
-        if file == 'Block2.csv':  # Block2 is the standard dots task
-            t = Trials(prob_cp=0, num_trials=block_length, seed=count)
-            t.save_to_csv(file)
-        elif file[:5] == 'Block': # the other ones are dual-report blocks
-            t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
-            t.save_to_csv(file)
-            dual_report_block_count += 1
+    def validate_prob_cp_seq(seq, num_blocks, num_blocks_seq, cp_vals):
+        assert len(seq) == num_blocks
+        for prob_cp in cp_vals:
+            counter = 0
+            for s in seq:
+                if s == prob_cp:
+                    counter += 1
+            if counter != num_blocks_seq:
+                return False
+        return True
+
+    prob_cp_list = [0 for _ in range(num_dual_report_blocks)]
+    maxout = 1000
+    counter = 0
+    while not validate_prob_cp_seq(prob_cp_list, num_dual_report_blocks, num_blocks_single_prob_cp, all_vals):
+        prob_cp_list = gen_rand_prob_cp_seq(all_vals, num_dual_report_blocks)
+        counter += 1
+        if counter == maxout:
+            print(f"after {counter} attempts, not proper prob_cp list was reached")
+            break
+    else:
+        print(f'prob cp list for dual-report blocks found after {counter} attempts')
+        print(prob_cp_list)
+    #
+    # count = 0
+    # for file in filenames:
+    #     count += 1
+    #     dual_report_block_count = 0
+    #
+    #     # todo: deal with tutorials
+    #     if file[:3] == 'Tut':
+    #         pass
+    #     # deal with blocks
+    #     if file == 'Block2.csv':  # Block2 is the standard dots task
+    #         t = Trials(prob_cp=0, num_trials=block_length, seed=count)
+    #         t.save_to_csv(file)
+    #     elif file[:5] == 'Block': # the other ones are dual-report blocks
+    #         t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
+    #         t.save_to_csv(file)
+    #         dual_report_block_count += 1
 
