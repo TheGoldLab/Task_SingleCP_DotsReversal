@@ -44,6 +44,7 @@ settings = { ...
     'referenceRT',                500, ... % for speed feedback
     'showFeedback',               .5, ... % timeout for feedback
     'showSmileyFace',             .2, ...
+    'trialFolder',                '', ...
     };
 
 % Update from argument list (property/value pairs)
@@ -168,6 +169,7 @@ for ii = 1:2:length(taskSpecs)
         noDots = false;
     end
     
+    trial_folder = topNode.nodeData{'Settings'}{'trialFolder'};
     % Special case of quest ... use output as coh/RT refs
     if strcmp(taskSpecs{ii}, 'Quest')
         QuestTask = task;
@@ -175,8 +177,8 @@ for ii = 1:2:length(taskSpecs)
     else
         task.trialSettings.loadFromFile = true;
         task.trialSettings.numTrials = taskSpecs{ii+1};
-        task.trialSettings.csvFile = [taskSpecs{ii}, '.csv'];
-        task.trialSettings.jsonFile = [taskSpecs{ii}, '_metadata.json'];
+        task.trialSettings.csvFile = [trial_folder, taskSpecs{ii}, '.csv'];
+        task.trialSettings.jsonFile = [trial_folder, taskSpecs{ii}, '_metadata.json'];
     end
         
     % Add some fevalables to show instructions/feedback before/after tasks
