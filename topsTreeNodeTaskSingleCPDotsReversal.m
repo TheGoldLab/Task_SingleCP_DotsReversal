@@ -407,9 +407,10 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %% Self paced break screen
         function self_paced_break(self)
             
-            % ---- Check for event
+            % ---- Activate event and check for it
             %
-            eventName = self.helpers.reader.readEvent({'holdFixation'}, self, 'end_of_break');
+            self.helpers.reader.theObject.setEventsActiveFlag('holdFixation')
+            eventName = self.helpers.reader.readEvent({'holdFixation'});
             
             % Nothing... keep checking
             while isempty(eventName)
@@ -417,7 +418,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     'Well done! Take a break if you wish. You may start the next chunk by pressing space bar.', ...
                     'showDuration', 0.1, ...
                      'blank', false);
-                eventName = self.helpers.reader.readEvent({'holdFixation'}, self, 'end_of_break');
+                eventName = self.helpers.reader.readEvent({'holdFixation'});
             end
         end
         
@@ -473,7 +474,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % we offer the subject the possibility to take a break
             % the subject triggers the start of the task with a key press
             
-            %waitfor(self.self_paced_break())
+            self.self_paced_break()
             
             % ---- Initialize the state machine
             %
@@ -533,6 +534,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Prepare components
             %
             self.prepareDrawables();
+            self.prepareReadables();
             self.prepareStateMachine();
             
             % jig sets the timing in the statelist
@@ -879,6 +881,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ensemble.callObjectMethod(@prepareToDrawInWindow);
         end
         
+        %% Prepare readables for this trial
+        %
+        function prepareReadables(self)
+         
+            % ---- Inactivate all of the readable events
+            %
+            self.helpers.reader.theObject.deactivateEvents();
+        end   
         
         %% Prepare stateMachine for this trial
         %
