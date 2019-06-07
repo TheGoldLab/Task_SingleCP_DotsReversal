@@ -522,6 +522,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.isCP = false;
                 self.timing.dotsDuration1 = trial.viewingDuration;
                 self.timing.dotsDuration2 = 0;
+                if isnan(trial.endDirection)
+                    trial.endDirection = trial.initDirection;
+                end
             end
 
             self.setTrial(trial);
