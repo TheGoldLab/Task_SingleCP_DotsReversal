@@ -403,13 +403,6 @@ if __name__ == '__main__':
     assert np.mod(num_dual_report_blocks, len(all_vals)) == 0
     num_blocks_single_prob_cp = num_dual_report_blocks / len(all_vals)
 
-    dual_report_start_index = 3
-    block_length = 425  # bank of trials to use for this block
-
-    filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
-    for idx in range(num_dual_report_blocks):
-        filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
-
     def gen_rand_prob_cp_seq(cp_vals, tot_num_blocks):
         """
         Generates a random sequence of prob_cp values to assign to each block.
@@ -426,53 +419,63 @@ if __name__ == '__main__':
         num_vals = len(cp_vals)
         val_idxs = {i for i in range(num_vals)}
 
-        prob_cp_list = [cp_vals[last_idx]]
+        prob_list = [cp_vals[last_idx]]
 
         for r in range(tot_num_blocks - 1):
             new_idxs = list(val_idxs - {last_idx})    # update allowed indices for this block (enforce a transition)
             last_idx = new_idxs[np.random.randint(num_vals - 1)]  # pick one of the other two indices at random
-            prob_cp_list.append(all_vals[last_idx])
+            prob_list.append(all_vals[last_idx])
 
-        return prob_cp_list
+        return prob_list
 
     def validate_prob_cp_seq(seq, num_blocks, num_blocks_seq, cp_vals):
         assert len(seq) == num_blocks
         for prob_cp in cp_vals:
-            counter = 0
+            cc = 0  # counter
             for s in seq:
                 if s == prob_cp:
-                    counter += 1
-            if counter != num_blocks_seq:
+                    cc += 1
+            if cc != num_blocks_seq:
                 return False
         return True
 
     prob_cp_list = [0 for _ in range(num_dual_report_blocks)]
-    maxout = 1000
+    maxout = 1000  # total number of iterations allowed for the following while loop
     counter = 0
     while not validate_prob_cp_seq(prob_cp_list, num_dual_report_blocks, num_blocks_single_prob_cp, all_vals):
         prob_cp_list = gen_rand_prob_cp_seq(all_vals, num_dual_report_blocks)
         counter += 1
+        # print('all_vals', all_vals)
+        # print('num_dual_report_blocks', num_dual_report_blocks)
+        # print('prob_cp_list', prob_cp_list)
+        # print('counter in while loop', counter)
         if counter == maxout:
             print(f"after {counter} attempts, not proper prob_cp list was reached")
             break
     else:
         print(f'prob cp list for dual-report blocks found after {counter} attempts')
         print(prob_cp_list)
-    #
-    # count = 0
-    # for file in filenames:
-    #     count += 1
-    #     dual_report_block_count = 0
-    #
-    #     # todo: deal with tutorials
-    #     if file[:3] == 'Tut':
-    #         pass
-    #     # deal with blocks
-    #     if file == 'Block2.csv':  # Block2 is the standard dots task
-    #         t = Trials(prob_cp=0, num_trials=block_length, seed=count)
-    #         t.save_to_csv(file)
-    #     elif file[:5] == 'Block': # the other ones are dual-report blocks
-    #         t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
-    #         t.save_to_csv(file)
-    #         dual_report_block_count += 1
 
+        dual_report_start_index = 3
+        block_length = 425  # number of trials to use for each block
+
+        filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
+        for idx in range(num_dual_report_blocks):
+            filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
+
+        count = 0
+        for file in filenames:
+            count += 1
+            dual_report_block_count = 0
+
+            # todo: deal with tutorials
+            if file[:3] == 'Tut':
+                pass
+            # deal with blocks
+            if file == 'Block2.csv':  # Block2 is the standard dots task
+                t = Trials(prob_cp=0, num_trials=block_length, seed=count)
+                t.save_to_csv(file)
+            elif file[:5] == 'Block':  # the other ones are dual-report blocks
+                t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
+                t.save_to_csv(file)
+                dual_report_block_count += 1
