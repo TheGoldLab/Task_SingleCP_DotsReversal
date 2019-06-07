@@ -456,11 +456,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     self.settings.coherencesFromQuest);
                 
                 % get coherence value corresponding to 98 pCorrect
-                questHighCoh = self.settings.useQuest.getQuestCoh(.98);
-                if questHighCoh > 100
-                    questHighCoh = 100;
-                end
-                
+%                 questHighCoh = self.settings.useQuest.getQuestCoh(.98);
+%                 if questHighCoh > 100
+%                     questHighCoh = 100;
+%                 end
+                questHighCoh = 100;
+
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
                     [0, questThreshold, questHighCoh]);
