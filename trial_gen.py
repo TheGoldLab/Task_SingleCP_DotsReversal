@@ -393,6 +393,7 @@ if __name__ == '__main__':
     """
     todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
+    marg_tol = 0.01  # max deviation allowed between theoretical and empirical marginal probabilities
     all_vals = list(ALLOWED_PROB_CP - {0})
 
     # number of blocks in total for the dual-report task
@@ -473,9 +474,10 @@ if __name__ == '__main__':
                 pass
             # deal with blocks
             if file == 'Block2.csv':  # Block2 is the standard dots task
-                t = Trials(prob_cp=0, num_trials=block_length, seed=count)
+                t = Trials(prob_cp=0, num_trials=block_length, seed=count, marginal_tolerance=marg_tol)
                 t.save_to_csv(file)
             elif file[:5] == 'Block':  # the other ones are dual-report blocks
-                t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count)
+                t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count,
+                           marginal_tolerance=marg_tol)
                 t.save_to_csv(file)
                 dual_report_block_count += 1
