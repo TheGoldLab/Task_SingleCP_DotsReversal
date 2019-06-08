@@ -3,7 +3,7 @@ This module is designed to generate trials for our task with the
 correct statistics
 
 Example usage:
-  >>>> trials = Trials(0.8, 204, marginal_tolerance=0.02)
+  >>>> trials = Trials(prob_cp=0.8, num_trials=204, marginal_tolerance=0.02)
   >>>> trials.attempt_number
   >>>> trials.save_to_csv('/foo/bar.csv')  # a .json file gets created for meta data
   >>>> reloaded_trials = Trials(from_file='/foo/bar.csv')  # also loads meta data from .json file
@@ -176,7 +176,7 @@ class Trials:
         :param from_file: filename to load data from. If None, data is randomly generated. If a filename is provided,
                           it should have a .csv extension and a corresponding metadata file with name equal to standard_
                           meta_filename(filename) should exist. Note that if data and meta_data are loaded from files,
-                          all other kwargs provided to __init__ will be overriden by self.load_from_file()
+                          all other kwargs provided to __init__ will be overriden by self._load_from_file()
         """
         if from_file is None:
             self.loaded_from_file = False
@@ -262,7 +262,7 @@ class Trials:
             self.csv_md5 = None
             self.csv_filename = None
         else:
-            self.load_from_file(from_file)
+            self._load_from_file(from_file)
 
     @staticmethod
     def load_meta_data(filename):
@@ -300,7 +300,7 @@ class Trials:
         assert Trials.load_meta_data(meta_filename)['csv_md5'] == md5(csv_filename), 'MD5 check failed!'
         print('MD5 verified!')
 
-    def load_from_file(self, fname, meta_file=None):
+    def _load_from_file(self, fname, meta_file=None):
         """
         load full object from .csv file and its corresponding metadata file
         :param fname: (str) path to csv file
@@ -367,6 +367,7 @@ class Trials:
 
             self.trial_data.to_csv(filename, index=False)
             print(f"file {filename} created")
+
             if with_meta_data:
                 meta_filename = standard_meta_filename(filename)
                 meta_dict = {
