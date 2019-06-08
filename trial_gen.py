@@ -397,7 +397,7 @@ if __name__ == '__main__':
     all_vals = list(ALLOWED_PROB_CP - {0})
 
     # number of blocks in total for the dual-report task
-    num_dual_report_blocks = 15
+    num_dual_report_blocks = 9
 
     # number of blocks to enforce for each prob_cp value (other than 0)
     # ensure the latter divides the former
@@ -458,16 +458,17 @@ if __name__ == '__main__':
         print(prob_cp_list)
 
         dual_report_start_index = 3
-        block_length = 425  # number of trials to use for each block
+        block_length = 250  # number of trials to use for each block
 
         filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
         for idx in range(num_dual_report_blocks):
             filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
 
         count = 0
+        dual_report_block_count = 0
+
         for file in filenames:
             count += 1
-            dual_report_block_count = 0
 
             # todo: deal with tutorials
             if file[:3] == 'Tut':
