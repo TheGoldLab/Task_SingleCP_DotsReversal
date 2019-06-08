@@ -24,7 +24,7 @@ if __name__ == '__main__':
             mdat = Trials.load_meta_data(f)
             if mdat['prob_cp'] == pcp:
                 files_to_visit.append(f)
-                block_dfs.append(Trials(from_file=f).trial_data)
+                block_dfs.append(Trials(from_file=f).trial_data.iloc[:200])
         df = pd.concat(block_dfs)  # step 2
         # step 4 (makes more sense to do it here)
         new_df = df.groupby(['coh', 'cp', 'vd']).size().reset_index(name='count')
