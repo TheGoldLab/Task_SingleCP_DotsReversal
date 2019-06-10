@@ -25,8 +25,7 @@ name = 'SingleCP_DotsReversal';
 
 % Other defaults
 settings = { ...
-    'taskSpecs',                  {'Quest' 1 'CP' 1}, ...
-    'probCPs',                    [0 0.5], ... % probability of CP in each task node
+    'taskSpecs',                  {'Quest' 1}, ...
     'runGUIname',                 'eyeGUI', ...
     'databaseGUIname',            [], ...
     'remoteDrawing',              false, ...
@@ -45,6 +44,7 @@ settings = { ...
     'referenceRT',                500, ... % for speed feedback
     'showFeedback',               .5, ... % timeout for feedback
     'showSmileyFace',             .2, ...
+    'trialFolder',                '', ...
     };
 
 % Update from argument list (property/value pairs)
@@ -82,19 +82,11 @@ topNode.addHelpers('feedback');
 % Add readable(s). See topsTaskHelperReadable for details.
 readables = topNode.nodeData{'Settings'}{'readables'};
 for ii = 1:length(readables)
-   theHelper = topNode.addReadable('readable', ...
+   topNode.addReadable('readable', ...
       topNode.nodeData{'Settings'}{'doRecording'}, ...
       topNode.nodeData{'Settings'}{'doCalibration'}, ...
       false, ... % this boolean value cooresponds to the doShow argument in topsTreeNodeTopNode.addReadable()
-      readables{ii});
-      
-   % For readableEye objects, set default gaze window size and duration
-   if isa(theHelper.(readables{ii}).theObject, 'dotsReadableEye')
-      theHelper.(readables{ii}).theObject.gazeMonitor.defaultWindowSize = ...
-         topNode.nodeData{'Settings'}{'gazeWindowSize'};
-      theHelper.(readables{ii}).theObject.gazeMonitor.defaultWindowDuration = ...
-         topNode.nodeData{'Settings'}{'gazeWindowDuration'};
-   end         
+      readables{ii});   
 end
 
 % Add writable (TTL out). See topsTaskHelperTTL for details.
@@ -137,7 +129,6 @@ taskSpecs = topNode.nodeData{'Settings'}{'taskSpecs'};
 QuestTask = [];
 noDots    = true;
 
-probCPs = topNode.nodeData{'Settings'}{'probCPs'};
 
 % loop through task nodes
 taskCounter = 1;
@@ -150,7 +141,10 @@ for ii = 1:2:length(taskSpecs)
         {'timing',   'showSmileyFace'},     topNode.nodeData{'Settings'}{'showSmileyFace'}, ...
         {'settings', 'recordDotsPositions'},topNode.nodeData{'Settings'}{'recordDotsPositions'}, ...
         'taskID',                           taskCounter, ...
-        'taskTypeID',  find(strcmp(taskSpecs{ii}, {'Quest' 'CP'}),1)};
+        'taskTypeID',  find(strcmp(taskSpecs{ii}, {'test' 'Quest'  ...
+        'Tut1' 'Tut2' 'Tut3' 'Block1' 'Block2' 'Block3' 'Block4' ...
+         'Block5' 'Block6' 'Block7' 'Block8' 'Block9' 'Block10' ...
+         'Block11' 'Block12' 'Block13' 'Block14' 'Block15' 'Block16'}),1)};
     
     
     
@@ -165,10 +159,7 @@ for ii = 1:2:length(taskSpecs)
     task = topsTreeNodeTaskSingleCPDotsReversal.getStandardConfiguration(args{:});
     task.setIndependentVariableByName('initDirection', 'values', ...
         topNode.nodeData{'Settings'}{'dotDirections'});
-    
-    % set probCP according to task node number
-    task.setIndependentVariableByName('probCP', 'values', probCPs(taskCounter))
-    
+      
     % Add special instructions for first dots task
     if noDots
         task.settings.textStrings = cat(1, ...
@@ -178,9 +169,16 @@ for ii = 1:2:length(taskSpecs)
         noDots = false;
     end
     
+    trial_folder = topNode.nodeData{'Settings'}{'trialFolder'};
     % Special case of quest ... use output as coh/RT refs
     if strcmp(taskSpecs{ii}, 'Quest')
         QuestTask = task;
+        task.trialSettings.loadFromFile = false;
+    else
+        task.trialSettings.loadFromFile = true;
+        task.trialSettings.numTrials = taskSpecs{ii+1};
+        task.trialSettings.csvFile = [trial_folder, taskSpecs{ii}, '.csv'];
+        task.trialSettings.jsonFile = [trial_folder, taskSpecs{ii}, '_metadata.json'];
     end
         
     % Add some fevalables to show instructions/feedback before/after tasks
