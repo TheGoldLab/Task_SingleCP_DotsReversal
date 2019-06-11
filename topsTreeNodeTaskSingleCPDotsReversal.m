@@ -218,8 +218,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                                             'choseLeft', ...    % left trigger
                                             'choseRight', ...   % right trigger
                                             'B', ...           
-                                            'X', ...
-                                            'Y'}, ...
+                                            'choseCP', ...      % X button
+                                            'choseNOCP'}, ...   % Y button
             'component',                  {'Button1', ...  % button ID 3
                                             'Trigger1', ...% button ID 7
                                             'Trigger2', ...% button ID 8
@@ -249,6 +249,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % requests for 2 responses if true; for decide on direction, then
         % decide on presence/absence of change point
         isDualReport = false;
+        
+        getMoney = false;
     end
     
     properties (SetAccess = protected)      
@@ -441,7 +443,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % Nothing... keep checking
             while isempty(eventName)
                 self.helpers.feedback.show('text', ...
-                    'Well done! Take a break if you wish.\n You may start the next chunk by pressing space bar.', ...
+                    ['Take a break if you wish.', char(10), ...
+                    'You may start the next block by pressing', ...
+                    'the A button.'], ...
                     'showDuration', 0.1, ...
                      'blank', false);
                 eventName = self.helpers.reader.readEvent({'holdFixation'});
@@ -526,6 +530,42 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do after each time you run this
         % task
         function finishTask(self)
+            % compute money reward
+            if strcmp(self.name(1:5), 'Block')
+                full_correct_counter = 0;
+                trial_counter = 0;
+                tot_trials = numel(self.trialData);
+                for t = 1:tot_trials
+                    trial = self.trialData(t);
+                    if trial.coherence == 100
+                        trial_counter = trial_counter + 1;
+                        if trial.dirCorrect && trial.cpCorrect
+                            full_correct_counter = full_correct_counter + 1;
+                        end
+                    end
+                end
+                self.getMoney = (full_correct_counter / trial_counter) > 0.75;
+                
+                if self.getMoney
+                    self.helpers.feedback.show('text', ...
+                        ['Well done! You earned an additional $', ...
+                        num2str(2),' with this block!'], ...
+                        'showDuration', 10, ...
+                        'blank', false);
+                else
+                    self.helpers.feedback.show('text', ...
+                        ['You did not earn additional money on this block.', ...
+                        char(10), 'Let us know if something is wrong.'], ...
+                        'showDuration', 10, ...
+                        'blank', false);
+                end
+            elseif strcmp(self.name(1:5), 'Quest')
+                self.helpers.feedback.show('text', ...
+                    ['You earned your first $', ...
+                    num2str(2),' with this block!'], ...
+                    'showDuration', 10, ...
+                    'blank', false);
+            end
         end
         
         %% Start trial
