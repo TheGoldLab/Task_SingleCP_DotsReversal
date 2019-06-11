@@ -130,6 +130,10 @@ QuestTask = [];
 noDots    = true;
 
 
+
+% tasks with single report
+singleReports = {'Quest','Tut1','Tut2','Block2'}; 
+
 % loop through task nodes
 taskCounter = 1;
 for ii = 1:2:length(taskSpecs)
@@ -141,8 +145,8 @@ for ii = 1:2:length(taskSpecs)
         {'timing',   'showSmileyFace'},     topNode.nodeData{'Settings'}{'showSmileyFace'}, ...
         {'settings', 'recordDotsPositions'},topNode.nodeData{'Settings'}{'recordDotsPositions'}, ...
         'taskID',                           taskCounter, ...
-        'taskTypeID',  find(strcmp(taskSpecs{ii}, {'test' 'Quest'  ...
-        'Tut1' 'Tut2' 'Tut3' 'Block1' 'Block2' 'Block3' 'Block4' ...
+        'taskTypeID',  find(strcmp(taskSpecs{ii}, {'Quest'  ...
+        'Tut1' 'Tut2' 'Tut3' 'Block2' 'Block3' 'Block4' ...
          'Block5' 'Block6' 'Block7' 'Block8' 'Block9' 'Block10' ...
          'Block11' 'Block12' 'Block13' 'Block14' 'Block15' 'Block16'}),1)};
     
@@ -179,6 +183,9 @@ for ii = 1:2:length(taskSpecs)
         task.trialSettings.numTrials = taskSpecs{ii+1};
         task.trialSettings.csvFile = [trial_folder, taskSpecs{ii}, '.csv'];
         task.trialSettings.jsonFile = [trial_folder, taskSpecs{ii}, '_metadata.json'];
+        if ~ismember(task.name, singleReports)
+            task.isDualReport = true;
+        end
     end
         
     % Add some fevalables to show instructions/feedback before/after tasks
