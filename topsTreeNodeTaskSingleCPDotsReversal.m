@@ -432,6 +432,40 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             end
         end
         
+        %% debug cross
+        function debug_cross(self)
+            
+            % ---- Activate event and check for it
+            %
+            self.helpers.reader.theObject.setEventsActiveFlag({'x','y'})
+            xeventName = self.helpers.reader.readEvent({'x'});
+            yeventName = self.helpers.reader.readEvent({'y'});
+            
+            
+            
+            % Nothing... keep checking
+            while isempty(xeventName) && isempty(yeventName)
+                self.helpers.feedback.show('text', ...
+                    {'waiting for cross press'}, ...
+                    'showDuration', 0.1, ...
+                    'blank', false);
+                
+                xeventName = self.helpers.reader.readEvent({'x'});
+                yeventName = self.helpers.reader.readEvent({'y'});
+            end
+            
+            if ~isempty(xeventName)
+                ev='x';
+            elseif ~isempty(yeventName)
+                ev='y';
+            end
+            
+            self.helpers.feedback.show('text', ...
+                ['event ',ev,' detected!'], ...
+                'showDuration', 3.5, ...
+                'blank', true);
+        end
+        
         %% Self paced break screen
         function self_paced_break(self)
             
@@ -535,6 +569,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     [30 40 30]);
             end
             
+            
+            % debug
+            self.debug_cross()
+            
+            
             % ---- Self-paced break screen
             % we offer the subject the possibility to take a break
             % the subject triggers the start of the task with a key press
@@ -621,6 +660,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.name, block_reward, curr_tot_reward)
             fprintf(char(10))
             fprintf('============================================================')
+            fprintf(char(10))
         end
         
         %% Start trial
