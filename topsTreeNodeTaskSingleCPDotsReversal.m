@@ -484,6 +484,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do before each time you run this
         % task
         function startTask(self)
+            % manually add dummy events related to x and y directions of
+            % directional cross on gamepad
+            readableObj = self.helpers.reader.theObject;
+            if isa(readableObj,'dotsReadableHIDGamepad')
+                readableObj.defineEvent('x', 'component', 9);
+                readableObj.defineEvent('y', 'component', 10);
+            end
+            
             self.trialIterationMethod = 'sequential';  % enforce sequential
             self.randomizeWhenRepeating = false;
             
