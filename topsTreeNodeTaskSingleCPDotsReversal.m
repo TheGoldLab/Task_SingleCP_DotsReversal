@@ -114,6 +114,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'dotsOn', ...
             'dotsOff', ...
             'dirChoiceTime', ...
+            'dirReleaseChoiceTime', ...
             'cpChoiceTime', ...
             'targetOff', ...
             'fixationOff', ...
@@ -816,7 +817,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Jump to next state when done
             if self.isDualReport
-                nextState = 'blank1';
+                nextState = 'waitForReleasFX';
             else
                 % Override completedTrial flag
                 self.completedTrial = true;
@@ -850,8 +851,30 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             end
 %             self.helpers.reader.theObject.deactivateEvents();
         end
+        %% Check for direction choice trigger Release
+        %
+        % Save choice/RT information and set up feedback for the dots task
+        function nextState = checkForReleaseDirChoice(self, events, eventTag)
+            
+            % ---- Check for event
+            %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
+            eventName = self.helpers.reader.readEvent(events, self, eventTag);
+            
+            % Nothing... keep checking
+            if isempty(eventName)
+                nextState = [];
+                return
+            end
+            
+            % Jump to next state when done
+            nextState = 'blank1';
+
+            
+        end
         
-        %% Check for CP choice
+        %% Check for CP choice 
         %
         % Save choice/RT information and set up feedback for the dots task
         function nextState = checkForCPChoice(self, events, eventTag)
@@ -1182,6 +1205,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             chkuif  = {@getNextEvent, self.helpers.reader.theObject, false, {'holdFixation'}};
             chkuib  = {}; % {@getNextEvent, self.readables.theObject, false, {}}; % {'brokeFixation'}
             chkuic  = {@checkForDirChoice, self, {'choseLeft' 'choseRight'}, 'dirChoiceTime'};
+            chkuic2  = {@checkForReleaseDirChoice, self, {'choseLeft' 'choseRight'}, 'dirReleaseChoiceTime'};
             chkuid  = {@checkForCPChoice, self, {'choseLeft' 'choseRight'}, 'cpChoiceTime'};
             showfx  = {@draw, self.helpers.stimulusEnsemble, {{'colors', ...
                 [1 0 0], 1}, {'isVisible', true, 1}, {'isVisible', false, [2 3 4 5 6]}},  self, 'fixationOn'};
@@ -1237,6 +1261,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}       ''                ; ...
                 'switchDots'        switchd  {}       t.dotsDuration2           {}       'waitForChoiceFX' ; ...
                 'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           {}       ''                ; ...
+                'waitForReleasFX'   {}       chkuic2   t.choiceTimeout           {}       ''                ; ...
                 'blank1'            blanks   {}       0.1                       dque    'waitForChoiceCP' ; ...
                 'waitForChoiceCP'   cpopts   chkuid   t.choiceTimeout           {}       'blank'           ; ...
                 'blank'             blanks   {}       0.1                       flsh     'showFeedback'    ; ...
