@@ -973,8 +973,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Set up feedback based on outcome
             if ~isnan(trial.dirCorrect)
-                feedbackStr = ['dir ans ', num2str(trial.dirCorrect), ...
-                    ' cp ans ', num2str(trial.cpCorrect)]; 
+                feedbackStr = ['dir ans ', num2str(trial.dirChoice), ...
+                    ' cp ans ', num2str(trial.cpChoice)]; 
                 
             else
 %                 feedbackArgs = {'text', 'No choice'};
@@ -1163,6 +1163,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % empty function
         end
         
+        function flushEventsQueue(self)
+            numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            while numEventsInQueue > 0
+                self.helpers.reader.theObject.dequeueEvent(false);
+                numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            end
+        end
         
         %% Initialize StateMachine
         %
@@ -1206,6 +1213,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             gwfxh = {};
             gwts  = {sea, self.helpers.reader.theObject, {'choseLeft', 'choseRight'}, 'holdFixation'};
             flsh = {@flushData, self.helpers.reader.theObject};
+            dque = {@flushEventsQueue, self};
 %             gwcp  = {sea, self.helpers.reader.theObject, {'choseNOCP', 'choseCP'}};
             
             % ---- Timing variables, read directly from the timing property struct
@@ -1229,7 +1237,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}       ''                ; ...
                 'switchDots'        switchd  {}       t.dotsDuration2           {}       'waitForChoiceFX' ; ...
                 'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           {}       ''                ; ...
-                'blank1'            blanks   {}    0.1                          flsh     'waitForChoiceCP' ; ...
+                'blank1'            blanks   {}       0.1                       dque    'waitForChoiceCP' ; ...
                 'waitForChoiceCP'   cpopts   chkuid   t.choiceTimeout           {}       'blank'           ; ...
                 'blank'             blanks   {}       0.1                       flsh     'showFeedback'    ; ...
                 'showFeedback'      showfb   {}       t.showFeedback            blanks   'done'            ; ...
