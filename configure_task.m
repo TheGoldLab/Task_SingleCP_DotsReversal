@@ -200,7 +200,7 @@ for ii = 1:2:length(taskSpecs)
         if ~ismember(task.name, singleReports)
             task.isDualReport = true;
         end
-        if strcmp(taskSpecs{ii},'Tut2')
+        if strcmp(taskSpecs{ii},'Tut2') || strcmp(taskSpecs{ii}, 'Tut3')
             task.timing.showSmileyFace = .5;
         end
     end

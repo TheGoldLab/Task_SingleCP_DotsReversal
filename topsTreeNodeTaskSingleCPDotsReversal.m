@@ -850,7 +850,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self.setTrial(trial);
             
             % ---- Possibly show smiley face
-            if trial.dirCorrect == 1 && self.timing.showSmileyFace > 0
+            if trial.dirCorrect == 1 && self.timing.showSmileyFace > 0 && ~self.isDualReport
                 self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
                 pause(self.timing.showSmileyFace);
             end
@@ -934,7 +934,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self.setTrial(trial);
             
             % ---- Possibly show smiley face
-            if trial.cpCorrect == 1 && self.timing.showSmileyFace > 0
+            if (trial.cpCorrect * trial.dirCorrect == 1) && self.timing.showSmileyFace > 0
                 self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
                 pause(self.timing.showSmileyFace);
             end
@@ -1165,10 +1165,15 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Possibly update smiley face to location of correct target
             %
             if self.timing.showSmileyFace > 0
-                
-                % Set x,y
-                ensemble.setObjectProperty('x', fpX + sign(cosd(trial.endDirection))*td, 3);
-                ensemble.setObjectProperty('y', fpY, 3);
+                if strcmp(self.name, 'Tut3')
+                    % Set x,y
+                    ensemble.setObjectProperty('x', fpX, 3);
+                    ensemble.setObjectProperty('y', fpY, 3);
+                else
+                    % Set x,y
+                    ensemble.setObjectProperty('x', fpX + sign(cosd(trial.endDirection))*td, 3);
+                    ensemble.setObjectProperty('y', fpY, 3);
+                end
             end
             
             % ---- Prepare to draw dots stimulus
