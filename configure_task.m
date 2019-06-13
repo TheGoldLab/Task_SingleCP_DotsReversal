@@ -200,6 +200,9 @@ for ii = 1:2:length(taskSpecs)
         if ~ismember(task.name, singleReports)
             task.isDualReport = true;
         end
+        if strcmp(taskSpecs{ii},'Tut2')
+            task.timing.showSmileyFace = .5;
+        end
     end
         
     % Add some fevalables to show instructions/feedback before/after tasks
