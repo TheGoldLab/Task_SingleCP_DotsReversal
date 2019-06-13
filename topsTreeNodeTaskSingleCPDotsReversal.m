@@ -381,7 +381,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 end
                 
             % we only use the old makeTrials() for the Quest node
-            elseif strcmp(self.name, 'Quest') 
+            elseif strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1')
                 % if trialIterations arg is not provided or is empty, set it to
                 % 1
                 if nargin < 3 || isempty(trialIterations)
@@ -491,7 +491,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Nothing... keep checking
             while isempty(eventName)
-                if ismember(self.name,{'Quest', 'Block2', 'Block3'})
+                if ismember(self.name,{'Tut1', 'Tut2', 'Tut3', 'Quest', 'Block2', 'Block3'})
                     self.helpers.feedback.show('text', ...
                         {['You may start the next block by pressing', ...
                         ' the B button.']}, ...
@@ -509,7 +509,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 
                 eventName = self.helpers.reader.readEvent({'startTask'});
             end
-            if ~isempty(self.trialSettings.jsonFile) && ~strcmp(self.name, 'Block2')
+            if ~isempty(self.trialSettings.jsonFile) && ~ismember(self.name, {'Tut1', 'Tut2', 'Tut3', 'Block2'})
                 metaData = ...
                     loadjson(self.trialSettings.jsonFile);
                 if metaData.prob_cp < 0.5
@@ -544,7 +544,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % ---- Set up independent variables if Quest task
             %
-            if strcmp(self.name, 'Quest') % when we are running the task as Quest node
+            if strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1') % when we are running the task as Quest node
                 % Initialize and save Quest object
                 self.quest = qpInitialize(qpParams( ...
                     'stimParamsDomainList', { ...
@@ -622,45 +622,49 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.caller.nodeData.getItemFromGroupWithMnemonic('Settings', 'accruedReward');
             pause(0.1)
             % compute money reward
-            if strcmp(self.name(1:5), 'Block')
-                full_correct_counter = 0;
-                trial_counter = 0;
-                tot_trials = numel(self.trialData);
-                for t = 1:tot_trials
-                    trial = self.trialData(t);
-                    if trial.coherence == 100
-                        trial_counter = trial_counter + 1;
-                        if trial.dirCorrect && trial.cpCorrect
-                            full_correct_counter = full_correct_counter + 1;
+            if length(self.name) > 4
+                if strcmp(self.name(1:5), 'Block')
+                    full_correct_counter = 0;
+                    trial_counter = 0;
+                    tot_trials = numel(self.trialData);
+                    for t = 1:tot_trials
+                        trial = self.trialData(t);
+                        if trial.coherence == 100
+                            trial_counter = trial_counter + 1;
+                            if trial.dirCorrect && trial.cpCorrect
+                                full_correct_counter = full_correct_counter + 1;
+                            end
                         end
                     end
-                end
-                self.getMoney = (full_correct_counter / trial_counter) > 0.75;
-                
-                if self.getMoney
+                    self.getMoney = (full_correct_counter / trial_counter) > 0.75;
+                    
+                    if self.getMoney
+                        block_reward = 2;
+                        self.helpers.feedback.show('text', ...
+                            {['Well done! You earned $', ...
+                            num2str(block_reward)], ...
+                            ['Total = $', num2str(curr_tot_reward + block_reward)]}, ...
+                            'showDuration', 4.5, ...
+                            'blank', false);
+                        
+                    else
+                        self.helpers.feedback.show('text', ...
+                            {'You did not earn additional money on this block.', ...
+                            'Let us know if something is wrong.'}, ...
+                            'showDuration', 4.5, ...
+                            'blank', false);
+                        block_reward = 0;
+                    end
+                elseif strcmp(self.name(1:5), 'Quest')
                     block_reward = 2;
                     self.helpers.feedback.show('text', ...
-                        {['Well done! You earned $', ...
-                        num2str(block_reward)], ...
-                        ['Total = $', num2str(curr_tot_reward + block_reward)]}, ...
+                        ['You earned your first $', ...
+                        num2str(block_reward),' with this block!'], ...
                         'showDuration', 4.5, ...
                         'blank', false);
-                    
-                else
-                    self.helpers.feedback.show('text', ...
-                        {'You did not earn additional money on this block.', ...
-                         'Let us know if something is wrong.'}, ...
-                        'showDuration', 4.5, ...
-                        'blank', false);
-                    block_reward = 0;
                 end
-            elseif strcmp(self.name(1:5), 'Quest')
-                block_reward = 2;
-                self.helpers.feedback.show('text', ...
-                    ['You earned your first $', ...
-                    num2str(block_reward),' with this block!'], ...
-                    'showDuration', 4.5, ...
-                    'blank', false);
+            else
+                block_reward = 0;
             end
             curr_tot_reward = curr_tot_reward + block_reward;
             
@@ -769,7 +773,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self.setTrial(trial);
             
             % Conditionally update Quest
-            if strcmp(self.name, 'Quest')
+            if strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1')
                 
                 % ---- Check for bad trial
                 %
