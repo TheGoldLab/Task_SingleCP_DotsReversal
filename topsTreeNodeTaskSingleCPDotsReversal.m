@@ -51,7 +51,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'dotsDuration1',             [],  ...
             'dotsDuration2',             [],  ...
             'dotsTimeout',               5.0, ...
-            'choiceTimeout',             3.0);
+            'dirChoiceTimeout',          3.0, ...
+            'cpChoiceTimeout',           8.0);
         
         % settings about the trial sequence to use
         trialSettings = struct( ...
@@ -114,10 +115,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'dotsOn', ...
             'dotsOff', ...
             'dirChoiceTime', ...
+            'dirReleaseChoiceTime', ...
             'cpChoiceTime', ...
             'targetOff', ...
             'fixationOff', ...
-            'feedbackOn'};
+            'feedbackOn', ...
+            'CPresponseSide', ...
+            'startResponseTwo'};
         
         
         % empty struct that will later be filled, only if 
@@ -183,9 +187,18 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'density',                    90,               ... % 16.7 in Palmer/Huk/Shadlen 2005
             'speed',                      5,                ... % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
             'recordDotsPositions',        false)), ...
-                    ...   % CP Targets drawable settings
-            'cpTargets',                  struct( ...
-            'fevalable',                  @dotsDrawableText)));              
+            ...   % CP Targets drawable settings
+            'cpLeftTarget',               struct( ...
+            'fevalable',                  @dotsDrawableText, ...
+            'settings',                   struct( ...
+            'x',                          -12, ...
+            'y',                          0)), ...
+            ...
+            'cpRightTarget',              struct( ...
+            'fevalable',                  @dotsDrawableText, ...
+            'settings',                   struct( ...
+            'x',                          12, ...
+            'y',                          0))));              
         
         % Readable settings
         readable = struct( ...
@@ -432,6 +445,40 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             end
         end
         
+%         %% debug cross
+%         function debug_cross(self)
+%             
+%             % ---- Activate event and check for it
+%             %
+%             self.helpers.reader.theObject.setEventsActiveFlag({'x','y'})
+%             xeventName = self.helpers.reader.readEvent({'x'});
+%             yeventName = self.helpers.reader.readEvent({'y'});
+%             
+%             
+%             
+%             % Nothing... keep checking
+%             while isempty(xeventName) && isempty(yeventName)
+%                 self.helpers.feedback.show('text', ...
+%                     {'waiting for cross press'}, ...
+%                     'showDuration', 0.1, ...
+%                     'blank', false);
+%                 
+%                 xeventName = self.helpers.reader.readEvent({'x'});
+%                 yeventName = self.helpers.reader.readEvent({'y'});
+%             end
+%             
+%             if ~isempty(xeventName)
+%                 ev='x';
+%             elseif ~isempty(yeventName)
+%                 ev='y';
+%             end
+%             
+%             self.helpers.feedback.show('text', ...
+%                 ['event ',ev,' detected!'], ...
+%                 'showDuration', 3.5, ...
+%                 'blank', true);
+%         end
+        
         %% Self paced break screen
         function self_paced_break(self)
             
@@ -473,7 +520,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     cpfreq = 'a HIGH';
                 end
                 self.helpers.feedback.show('text', ...
-                    ['This block has ',cpfreq,' number of change-points'], ...
+                    ['This block has ',cpfreq,' number of switch trials'], ...
                     'showDuration', 6.5, ...
                     'blank', true);
             end
@@ -484,6 +531,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do before each time you run this
         % task
         function startTask(self)
+            % manually add dummy events related to x and y directions of
+            % directional cross on gamepad
+            readableObj = self.helpers.reader.theObject;
+            if isa(readableObj,'dotsReadableHIDGamepad')
+                readableObj.defineEvent('x', 'component', 9);
+                readableObj.defineEvent('y', 'component', 10);
+            end
+            
             self.trialIterationMethod = 'sequential';  % enforce sequential
             self.randomizeWhenRepeating = false;
             
@@ -526,6 +581,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.setIndependentVariableByName('coherence', 'priors', ...
                     [30 40 30]);
             end
+            
+            
+%             % debug
+%             self.debug_cross()
+%             
             
             % ---- Self-paced break screen
             % we offer the subject the possibility to take a break
@@ -613,6 +673,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.name, block_reward, curr_tot_reward)
             fprintf(char(10))
             fprintf('============================================================')
+            fprintf(char(10))
         end
         
         %% Start trial
@@ -745,6 +806,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % ---- Check for event
             %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
             eventName = self.helpers.reader.readEvent(events, self, eventTag);
             
             % Nothing... keep checking
@@ -755,7 +818,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Jump to next state when done
             if self.isDualReport
-                nextState = 'blank1';
+                nextState = 'waitForReleasFX';
             else
                 % Override completedTrial flag
                 self.completedTrial = true;
@@ -787,15 +850,40 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
                 pause(self.timing.showSmileyFace);
             end
+%             self.helpers.reader.theObject.deactivateEvents();
+        end
+        %% Check for direction choice trigger Release
+        %
+        % Save choice/RT information and set up feedback for the dots task
+        function nextState = checkForReleaseDirChoice(self, events, eventTag)
+            
+            % ---- Check for event
+            %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
+            eventName = self.helpers.reader.readEvent(events, self, eventTag);
+            
+            % Nothing... keep checking
+            if isempty(eventName)
+                nextState = [];
+                return
+            end
+            
+            % Jump to next state when done
+            nextState = 'blank1';
+
+            
         end
         
-        %% Check for CP choice
+        %% Check for CP choice 
         %
         % Save choice/RT information and set up feedback for the dots task
         function nextState = checkForCPChoice(self, events, eventTag)
             
             % ---- Check for event
             %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
             eventName = self.helpers.reader.readEvent(events, self, eventTag);
             
             % Nothing... keep checking
@@ -814,7 +902,19 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             trial = self.getTrial();
             
             % Save the choice
-            trial.cpChoice = double(strcmp(eventName, 'choseCP'));
+            if strcmp(eventName, 'choseLeft') 
+                if trial.CPresponseSide == 0
+                    trial.cpChoice = 1;
+                else
+                    trial.cpChoice = 0;
+                end
+            else
+                if trial.CPresponseSide == 1
+                    trial.cpChoice = 1;
+                else
+                    trial.cpChoice = 0;
+                end
+            end
             
             % Mark as correct/error
             % jig changed direction to endDirection
@@ -823,8 +923,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 (trial.cpChoice==1 && self.isCP));
             
             % Compute/save RT, wrt dotsOff for non-RT
-            trial.cpRT = trial.cpChoiceTime - trial.dirChoiceTime;
-            
+            trial.cpRT = trial.cpChoiceTime - trial.startResponseTwo;
             
             % ---- Re-save the trial
             %
@@ -898,8 +997,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Set up feedback based on outcome
             if ~isnan(trial.dirCorrect)
-                feedbackStr = ['dir ans ', num2str(trial.dirCorrect), ...
-                    ' cp ans ', num2str(trial.cpCorrect)]; 
+                feedbackStr = ['dir ans ', num2str(trial.dirChoice), ...
+                    ' cp ans ', num2str(trial.cpChoice)]; 
                 
             else
 %                 feedbackArgs = {'text', 'No choice'};
@@ -937,7 +1036,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Find values from PMF
             psiParamsIndex = qpListMaxArg(self.quest.posterior);
-            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:);
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:)
             
             if ~isempty(psiParamsQuest)
                 
@@ -1032,6 +1131,21 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Set a new seed base for the dots random-number process
             %
             trial.randSeedBase = randi(9999);
+            
+            
+            % CP targets assigned randomly
+            if rand < 0.5
+                ensemble.setObjectProperty('string', 'switch', 5);     % switch response on left
+                ensemble.setObjectProperty('string', 'no switch', 6);  % no switch response on right
+                trial.CPresponseSide = 0;
+            else
+                ensemble.setObjectProperty('string', 'switch', 6);     % switch response on right
+                ensemble.setObjectProperty('string', 'no switch', 5);  % no switch response on left
+                trial.CPresponseSide = 1;
+            end
+            
+  
+            % save trial struct
             self.setTrial(trial);
             
             % ---- Save dots properties
@@ -1042,8 +1156,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ensemble.setObjectProperty('recordDotsPositions', self.settings.recordDotsPositions, 4);
             ensemble.setObjectProperty('colors', [1 0 0], 1); % reset fixation color to red
             
-            % CP targets
-            ensemble.setObjectProperty('string', 'CP or No CP?', 5);
+
             
             % ---- Possibly update smiley face to location of correct target
             %
@@ -1074,6 +1187,13 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % empty function
         end
         
+        function flushEventsQueue(self)
+            numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            while numEventsInQueue > 0
+                self.helpers.reader.theObject.dequeueEvent(false);
+                numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            end
+        end
         
         %% Initialize StateMachine
         %
@@ -1086,11 +1206,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             chkuif  = {@getNextEvent, self.helpers.reader.theObject, false, {'holdFixation'}};
             chkuib  = {}; % {@getNextEvent, self.readables.theObject, false, {}}; % {'brokeFixation'}
             chkuic  = {@checkForDirChoice, self, {'choseLeft' 'choseRight'}, 'dirChoiceTime'};
-            chkuid  = {@checkForCPChoice, self, {'choseCP' 'choseNOCP'}, 'cpChoiceTime'};
+            chkuic2  = {@checkForReleaseDirChoice, self, {'choseLeft' 'choseRight'}, 'dirReleaseChoiceTime'};
+            chkuid  = {@checkForCPChoice, self, {'choseLeft' 'choseRight'}, 'cpChoiceTime'};
             showfx  = {@draw, self.helpers.stimulusEnsemble, {{'colors', ...
-                [1 0 0], 1}, {'isVisible', true, 1}, {'isVisible', false, [2 3 4 5]}},  self, 'fixationOn'};
+                [1 0 0], 1}, {'isVisible', true, 1}, {'isVisible', false, [2 3 4 5 6]}},  self, 'fixationOn'};
             cpopts  = {@draw, self.helpers.stimulusEnsemble, {{'colors', ...
-                [1 1 1], 1}, {'isVisible', true, 5}, {'isVisible', false, [1 2 3 4]}},  self, 'fixationOn'};
+                [1 1 1], 1}, {'isVisible', true, [5 6]}, {'isVisible', false, [1 2 3 4]}},  self, 'startResponseTwo'};
             showt   = {@draw, self.helpers.stimulusEnsemble, {2, []}, self, 'targetOn'};
             showfb  = {@showFeedback, self};
             showdFX = {@draw, self.helpers.stimulusEnsemble, {4, []}, self, 'dotsOn'};
@@ -1116,7 +1237,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             gwfxw = {sea, self.helpers.reader.theObject, 'holdFixation'};
             gwfxh = {};
             gwts  = {sea, self.helpers.reader.theObject, {'choseLeft', 'choseRight'}, 'holdFixation'};
-            gwcp  = {sea, self.helpers.reader.theObject, {'choseNOCP', 'choseCP'}};
+            flsh = {@flushData, self.helpers.reader.theObject};
+            dque = {@flushEventsQueue, self};
+%             gwcp  = {sea, self.helpers.reader.theObject, {'choseNOCP', 'choseCP'}};
             
             % ---- Timing variables, read directly from the timing property struct
             %
@@ -1138,10 +1261,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 'preDots'           chgfxcb  {}       0                         {}       'showDotsEpoch1'  ; ...
                 'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}       ''                ; ...
                 'switchDots'        switchd  {}       t.dotsDuration2           {}       'waitForChoiceFX' ; ...
-                'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           gwcp     ''                ; ...
-                'blank1'             {}      {}       0.1                       blanks   'waitForChoiceCP' ; ...
-                'waitForChoiceCP'   cpopts   chkuid   t.choiceTimeout           {}       'blank'          ; ...
-                'blank'             {}       {}       0.1                       blanks   'showFeedback'    ; ...
+                'waitForChoiceFX'   hided    chkuic   t.dirChoiceTimeout        {}       ''                ; ...
+                'waitForReleasFX'   {}       chkuic2  t.dirChoiceTimeout        {}       ''                ; ...
+                'blank1'            blanks   {}       0.2                       dque    'waitForChoiceCP' ; ...
+                'waitForChoiceCP'   cpopts   chkuid   t.cpChoiceTimeout         {}       'blank'           ; ...
+                'blank'             blanks   {}       0.1                       flsh     'showFeedback'    ; ...
                 'showFeedback'      showfb   {}       t.showFeedback            blanks   'done'            ; ...
                 'blankNoFeedback'   {}       {}       0                         blanks   'done'            ; ...
                 'done'              dnow     {}       t.interTrialInterval      dumpdots ''                ; ...
