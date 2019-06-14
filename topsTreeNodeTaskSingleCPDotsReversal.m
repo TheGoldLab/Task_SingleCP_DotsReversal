@@ -36,6 +36,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'errorImageIndex',            3,    ...
             'correctPlayableIndex',       1,    ...
             'errorPlayableIndex',         2,    ...
+            'deactivateConsoleStatus',    true, ...
             'recordDotsPositions',        false);   % flag controlling whether to store dots positions or not
         
         % Timing properties
@@ -621,49 +622,68 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             curr_tot_reward = ...
                 self.caller.nodeData.getItemFromGroupWithMnemonic('Settings', 'accruedReward');
             pause(0.1)
+            early_abort = false;
+            tot_trials = numel(self.trialData);
+            for t = 1:tot_trials
+                trial = self.trialData(t);
+                if isnan(trial.dirCorrect)
+                    early_abort = true;
+                    block_reward = 0;
+                    break
+                elseif isnan(trial.cpCorrect) && self.isDualReport
+                    early_abort = true;
+                    block_reward = 0;
+                    break
+                end
+            end
+            
             % compute money reward
-            if length(self.name) > 4
+            if length(self.name) > 4  % it is either a BlockX or Quest
                 if strcmp(self.name(1:5), 'Block')
                     full_correct_counter = 0;
                     trial_counter = 0;
-                    tot_trials = numel(self.trialData);
-                    for t = 1:tot_trials
-                        trial = self.trialData(t);
-                        if trial.coherence == 100
-                            trial_counter = trial_counter + 1;
-                            if trial.dirCorrect && trial.cpCorrect
-                                full_correct_counter = full_correct_counter + 1;
+                    if ~early_abort
+                        for t = 1:tot_trials
+                            trial = self.trialData(t);
+                            if trial.coherence == 100
+                                trial_counter = trial_counter + 1;
+                                if trial.dirCorrect && trial.cpCorrect
+                                    full_correct_counter = full_correct_counter + 1;
+                                end
                             end
                         end
-                    end
-                    self.getMoney = (full_correct_counter / trial_counter) > 0.75;
-                    
-                    if self.getMoney
-                        block_reward = 2;
-                        self.helpers.feedback.show('text', ...
-                            {['Well done! You earned $', ...
-                            num2str(block_reward)], ...
-                            ['Total = $', num2str(curr_tot_reward + block_reward)]}, ...
-                            'showDuration', 4.5, ...
-                            'blank', false);
-                        
+                        self.getMoney = (full_correct_counter / trial_counter) > 0.75;
+                        if self.getMoney
+                            block_reward = 2;
+                            self.helpers.feedback.show('text', ...
+                                {['Well done! You earned $', ...
+                                num2str(block_reward)], ...
+                                ['Total = $', num2str(curr_tot_reward + block_reward)]}, ...
+                                'showDuration', 4.5, ...
+                                'blank', false);
+                            
+                        else
+                            self.helpers.feedback.show('text', ...
+                                {'You did not earn additional money on this block.', ...
+                                'Let us know if something is wrong.'}, ...
+                                'showDuration', 4.5, ...
+                                'blank', false);
+                            block_reward = 0;
+                        end
                     else
-                        self.helpers.feedback.show('text', ...
-                            {'You did not earn additional money on this block.', ...
-                            'Let us know if something is wrong.'}, ...
-                            'showDuration', 4.5, ...
-                            'blank', false);
-                        block_reward = 0;
+                        self.getMoney = false;
                     end
                 elseif strcmp(self.name(1:5), 'Quest')
-                    block_reward = 2;
-                    self.helpers.feedback.show('text', ...
-                        ['You earned your first $', ...
-                        num2str(block_reward),' with this block!'], ...
-                        'showDuration', 4.5, ...
-                        'blank', false);
+                    if ~early_abort
+                        block_reward = 2;
+                        self.helpers.feedback.show('text', ...
+                            ['You earned your first $', ...
+                            num2str(block_reward),' with this block!'], ...
+                            'showDuration', 4.5, ...
+                            'blank', false);
+                    end
                 end
-            else
+            else % it was a tutorial block
                 block_reward = 0;
             end
             curr_tot_reward = curr_tot_reward + block_reward;
@@ -672,11 +692,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self.caller.nodeData.addItemToGroupWithMnemonic(curr_tot_reward, 'Settings', 'accruedReward');
             self.caller.nodeData.addItemToGroupWithMnemonic(block_reward, 'Settings', [self.name,'_reward']);
             
-            fprintf('----------')
-            fprintf(' End of %s, block reward %d, total reward %d', ...
-                self.name, block_reward, curr_tot_reward)
+            fprintf('=============================================================')
             fprintf(char(10))
-            fprintf('============================================================')
+            fprintf(' End of %s, block reward %d, total reward %d, aborted block=%d', ...
+                self.name, block_reward, curr_tot_reward, early_abort)
+            fprintf(char(10))
+            fprintf('=============================================================')
             fprintf(char(10))
         end
         
@@ -752,8 +773,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Show the information
             self.statusStrings = {taskString, trialString};
-            self.updateStatus(); % just update the second one
-            
+            if self.settings.deactivateConsoleStatus
+                % Possibly update the gui using the new task
+                self.caller.updateGUI('_updateTaskStatus', self, 1:length(self.statusStrings));
+            else
+                self.updateStatus(); % just update the second one
+            end
         end
         
         %% Flip direction of dots
@@ -820,41 +845,47 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 return
             end
             
-            % Jump to next state when done
-            if self.isDualReport
-                nextState = 'waitForReleasFX';
-            else
-                % Override completedTrial flag
-                self.completedTrial = true;
-                nextState = 'blank';
-            end
-            
             % Get current task/trial
             trial = self.getTrial();
+            
+            % Compute/save RT, wrt dotsOff for non-RT
+            trial.dirRT = trial.dirChoiceTime - trial.dotsOff;
+            if trial.dirRT < 0 || isnan(trial.dirRT)
+                nextState = 'blank';
+                pause(0.1)
+                self.helpers.feedback.show('text', ...
+                    {'You answered too soon.', ...
+                     'Please wait until the dots disappear.'}, ...
+                    'showDuration', 4, ...
+                    'blank', true);
+            else
+                % Jump to next state when done
+                if self.isDualReport
+                    nextState = 'waitForReleasFX';
+                else
+                    % Override completedTrial flag
+                    self.completedTrial = true;
+                    nextState = 'blank';
+                end
+                % Mark as correct/error
+                % jig changed direction to endDirection
+                trial.dirCorrect = double( ...
+                    (trial.dirChoice==0 && trial.endDirection==180) || ...
+                    (trial.dirChoice==1 && trial.endDirection==0));
+                
+                % ---- Possibly show smiley face
+                if trial.dirCorrect == 1 && self.timing.showSmileyFace > 0 && ~self.isDualReport
+                    self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
+                    pause(self.timing.showSmileyFace);
+                end
+            end
             
             % Save the choice
             trial.dirChoice = double(strcmp(eventName, 'choseRight'));
             
-            % Mark as correct/error
-            % jig changed direction to endDirection
-            trial.dirCorrect = double( ...
-                (trial.dirChoice==0 && trial.endDirection==180) || ...
-                (trial.dirChoice==1 && trial.endDirection==0));
-            
-            % Compute/save RT, wrt dotsOff for non-RT
-            trial.dirRT = trial.dirChoiceTime - trial.dotsOff;
-            
-            
             % ---- Re-save the trial
             %
             self.setTrial(trial);
-            
-            % ---- Possibly show smiley face
-            if trial.dirCorrect == 1 && self.timing.showSmileyFace > 0 && ~self.isDualReport
-                self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
-                pause(self.timing.showSmileyFace);
-            end
-%             self.helpers.reader.theObject.deactivateEvents();
         end
         %% Check for direction choice trigger Release
         %
@@ -1021,8 +1052,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 feedbackStr, ...
                 trial.dirRT, ...
                 trial.cpRT);
-            self.updateStatus(2); % just update the second one
-            
+            if self.settings.deactivateConsoleStatus
+                % Possibly update the gui using the new task
+                self.caller.updateGUI('_updateTaskStatus', self, 2);
+            else
+                self.updateStatus(2); % just update the second one
+            end
             % --- Show trial feedback on the screen
             %
             % self.helpers.feedback.show(feedbackArgs{:});
@@ -1040,31 +1075,15 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Find values from PMF
             psiParamsIndex = qpListMaxArg(self.quest.posterior);
-            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:)
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:);
             
             if ~isempty(psiParamsQuest)
                 
                 if nargin < 2 || isempty(pcors)
                     % Just return threshold in units of % coh
                     threshold = psiParamsQuest(1);
-%                 else
-%                     
-%                     % Compute PMF with fixed guess and no lapse
-%                     cax = 0:0.1:100;
-%                     predictedProportions =100*qpPFWeibull(cax', ...
-%                         [psiParamsQuest(1,1:3) 0]);
-%                     threshold = nans(size(pcors));
-%                     for ii = 1:length(pcors)
-%                         Lp = predictedProportions(:,2)>=pcors(ii);
-%                         if any(Lp)
-%                             threshold(ii) = cax(find(Lp,1));
-%                         end
-%                     end
                 end
             end
-            
-            % Convert to % coherence
-            %threshold = 10^(threshold./20).*100;
         end
         
         %% Get next coherences guess from Quest
@@ -1082,9 +1101,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % Find values from PMF
             psiParamsIndex = qpListMaxArg(self.quest.posterior);
             
-            % I intentionally omit the ; at the end of the line below
-            % to see parameters fitted by Quest at console
-            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:) 
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:); 
             
             % Compute PMF with fixed guess and no lapse
             desired_coh =qpPFStandardWeibullInv(pcorr, psiParamsQuest);
