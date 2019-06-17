@@ -847,9 +847,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % Get current task/trial
             trial = self.getTrial();
+            trial.dirChoice = double(strcmp(eventName, 'choseRight'));
             
-            % Compute/save RT, wrt dotsOff for non-RT
+            % Compute RT wrt dotsOff
             trial.dirRT = trial.dirChoiceTime - trial.dotsOff;
+            
             if trial.dirRT < 0 || isnan(trial.dirRT)
                 nextState = 'blank';
                 pause(0.1)
@@ -868,7 +870,6 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     nextState = 'blank';
                 end
                 % Mark as correct/error
-                % jig changed direction to endDirection
                 trial.dirCorrect = double( ...
                     (trial.dirChoice==0 && trial.endDirection==180) || ...
                     (trial.dirChoice==1 && trial.endDirection==0));
@@ -879,10 +880,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     pause(self.timing.showSmileyFace);
                 end
             end
-            
-            % Save the choice
-            trial.dirChoice = double(strcmp(eventName, 'choseRight'));
-            
+                       
             % ---- Re-save the trial
             %
             self.setTrial(trial);
