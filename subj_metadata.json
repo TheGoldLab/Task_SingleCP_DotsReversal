@@ -1,0 +1,92 @@
+{
+    "AER": {
+        "session1": {
+            "trialFolder": "Blocks003/",
+            "sessionTag": "",
+            "Tut1": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Quest": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Tut2": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block2": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Tut3": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block3": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block4": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block5": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block6": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block7": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block8": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block9": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block10": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            },
+            "Block11": {
+                "completed": "",
+                "aborted": "",
+                "reward": "",
+                "numTrials": ""
+            }
+        }
+    }
+}
