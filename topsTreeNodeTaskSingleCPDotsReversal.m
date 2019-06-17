@@ -699,6 +699,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             fprintf(char(10))
             fprintf('=============================================================')
             fprintf(char(10))
+            
+            
+            % store metadata 
+            
+            
+            
         end
         
         %% Start trial

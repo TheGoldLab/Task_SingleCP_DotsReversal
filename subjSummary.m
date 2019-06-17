@@ -2,9 +2,10 @@ function subjSummary(subjcode, filename)
 % displays metadata about a subject in this experiment
 
 % block list
-blockList = {'Tut1', 'Quest', 'Tut2', 'Block2', ...
-    'Block3', 'Block4', 'Block5', 'Block6', 'Block7', ...
-    'Block8', 'Block9', 'Block10', 'Block11'};
+% blockList = {'Tut1', 'Quest', 'Tut2', 'Block2', 'Tut3', ...
+%     'Block3', 'Block4', 'Block5', 'Block6', 'Block7', ...
+%     'Block8', 'Block9', 'Block10', 'Block11'};
+blockList = readDefaultBlockSequence();
 
 % read metadata file
 if nargin == 1
