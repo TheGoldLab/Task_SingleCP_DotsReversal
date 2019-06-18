@@ -716,8 +716,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % first get the session struct
             fullMetaData = loadjson(self.metadatafile);
-            allSessions = fieldnames(fullMetaData.(self.settings.subjectCode));
-            lastSessionName = allSessions{end};
+            tmpStruct=fullMetaData.(self.settings.subjectCode);
+            if isempty(tmpStruct)
+                lastSessionName = 'session0';
+            else
+                allSessions = fieldnames(tmpStruct);
+                lastSessionName = allSessions{end};
+            end
+            
             if self.taskID == 1  
                 % for first block in session, create struct
                 currSessionName = [lastSessionName(1:end-1),...

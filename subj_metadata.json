@@ -1,28 +1,10 @@
 {
-	"AERtest": {
+	"x1e699acd151392dbe881e6492ed60511": {
 		"session1": {
 			"trialFolder": "Blocks003",
-			"sessionTag": "2019_06_18_11_43",
+			"sessionTag": "2019_06_18_15_04",
 			"Tut1": {
 				"completed": 1,
-				"aborted": 0,
-				"reward": 0,
-				"numTrials": 20
-			},
-			"Quest": {
-				"completed": 0,
-				"aborted": 1,
-				"reward": 0,
-				"numTrials": 5
-			},
-			"Tut2": {
-				"completed": 1,
-				"aborted": 1,
-				"reward": 0,
-				"numTrials": 5
-			},
-			"Block2": {
-				"completed": 0,
 				"aborted": 1,
 				"reward": 0,
 				"numTrials": 1
@@ -30,20 +12,27 @@
 		},
 		"session2": {
 			"trialFolder": "Blocks003",
-			"sessionTag": "2019_06_18_12_10",
-			"Quest": {
-				"completed": 1,
-				"aborted": 0,
-				"reward": 2,
-				"numTrials": 60,
-				"QuestFit": [19.5,2,0.5,0.001]
-			}
-		},
-		"session3": {
-			"trialFolder": "Blocks003",
-			"sessionTag": "2019_06_18_12_24",
+			"sessionTag": "2019_06_18_15_15",
 			"Tut1": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 0
+			},
+			"Quest": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 0
+			},
+			"Tut2": {
 				"completed": 1,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 1
+			},
+			"Block2": {
+				"completed": 0,
 				"aborted": 1,
 				"reward": 0,
 				"numTrials": 1
