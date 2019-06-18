@@ -1,10 +1,14 @@
 function tab = subjSummary(subjcode, filename)
 % displays metadata about a subject in this experiment
+% function accepts 0, 1 or 2 arguments.
+% if the subject code is not known, just call the function with no argument
+% or with '' as first argument.
+% With a single or no argument, the function uses the default filename for 
+% the json metadata 
+%
+% Example: the easiest and best way to use the function is with no argument
+%    subjSummary()
 
-% block list
-% blockList = {'Tut1', 'Quest', 'Tut2', 'Block2', 'Tut3', ...
-%     'Block3', 'Block4', 'Block5', 'Block6', 'Block7', ...
-%     'Block8', 'Block9', 'Block10', 'Block11'};
 blockList = readDefaultBlockSequence(1);
 
 % get subject info to get code
