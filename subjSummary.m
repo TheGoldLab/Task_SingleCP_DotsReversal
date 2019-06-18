@@ -7,10 +7,16 @@ function tab = subjSummary(subjcode, filename)
 %     'Block8', 'Block9', 'Block10', 'Block11'};
 blockList = readDefaultBlockSequence(1);
 
+% get subject info to get code
+if nargin == 0 || isempty(subjcode)
+    subjcode = getSubjectCode();
+end
+
 % read metadata file
-if nargin == 1
+if nargin < 2
     filename = 'subj_metadata.json';
 end
+
 % disp(filename)
 ds = loadjson(filename);
 
@@ -45,6 +51,8 @@ if isfield(ds, subjcode)
         'VariableNames', blockList, ...
         'RowNames', datesArray);
     disp(tab)
+    
+    % TODO: compute total earned reward
 else
     % if subject is new
     %   say subject is new
