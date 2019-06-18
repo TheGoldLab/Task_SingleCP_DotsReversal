@@ -1,11 +1,11 @@
-function subjSummary(subjcode, filename)
+function tab = subjSummary(subjcode, filename)
 % displays metadata about a subject in this experiment
 
 % block list
 % blockList = {'Tut1', 'Quest', 'Tut2', 'Block2', 'Tut3', ...
 %     'Block3', 'Block4', 'Block5', 'Block6', 'Block7', ...
 %     'Block8', 'Block9', 'Block10', 'Block11'};
-blockList = readDefaultBlockSequence();
+blockList = readDefaultBlockSequence(1);
 
 % read metadata file
 if nargin == 1
@@ -36,15 +36,17 @@ if isfield(ds, subjcode)
     fprintf(char(10))  % new line
     fprintf('Session metadata for subject %s', subjcode);
     fprintf(char(10))  % new line
-    cell2table(completedBlocks, ...
+    tab = cell2table(completedBlocks, ...
         'VariableNames', blockList, ...
-        'RowNames', datesArray)
+        'RowNames', datesArray);
+    disp(tab)
 else
     % if subject is new
     %   say subject is new
     fprintf(char(10))
     fprintf('Subject %s is new for this experiment', subjcode);
     fprintf(char(10))
+    tab=table();
 end
 
 end
