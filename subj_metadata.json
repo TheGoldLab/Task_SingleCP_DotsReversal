@@ -27,6 +27,17 @@
 				"reward": 0,
 				"numTrials": 1
 			}
+		},
+		"session2": {
+			"trialFolder": "Blocks003",
+			"sessionTag": "2019_06_18_12_10",
+			"Quest": {
+				"completed": 1,
+				"aborted": 0,
+				"reward": 2,
+				"numTrials": 60,
+				"QuestFit": [19.5,2,0.5,0.001]
+			}
 		}
 	}
 }
