@@ -725,7 +725,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                
                 fullMetaData.(self.settings.subjectCode).(currSessionName) = struct();
                 
-                fullMetaData.(self.settings.subjectCode).(currSessionName).trialFolder = 'Blocks003/';
+                fullMetaData.(self.settings.subjectCode).(currSessionName).trialFolder = 'Blocks003';
                 stg = self.caller.filename(end-31:end-16);
                 fullMetaData.(self.settings.subjectCode).(currSessionName).sessionTag = stg;
                 
@@ -749,6 +749,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             subjBlockStruct.aborted = early_abort;
             subjBlockStruct.reward = block_reward;
             subjBlockStruct.numTrials = valid_trials;
+            
+            % write Quest parameters if completed:
+            if strcmp(self.name, 'Quest') && iscomplete
+                psiParamsIndex = qpListMaxArg(self.quest.posterior);
+                subjBlockStruct.QuestFit = self.quest.psiParamsDomain(psiParamsIndex,:);
+            end
             
             % then save back struct to metadata file
             fullMetaData.(self.settings.subjectCode).(currSessionName).(self.name) = ...

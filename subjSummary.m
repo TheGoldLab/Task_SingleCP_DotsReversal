@@ -25,12 +25,17 @@ if isfield(ds, subjcode)
     % display the blocks completed by the subject and their date
     for s = 1:numSessions
         session = sessionNames{s};
+%         disp(session)
         sessStruct = currDs.(session);
         datesArray{s} = sessStruct.sessionTag;
         for b = 1:length(blockList)
-            completedBlocks{s,b} = double( ...
-                strcmp(sessStruct.(blockList{b}).completed, 'true') ...
-            );
+%             disp(blockList{b})
+            if isfield(sessStruct, blockList{b})
+                completedBlocks{s,b} = sessStruct.(blockList{b}).completed;
+            else
+                completedBlocks{s,b} = 0;
+%                 disp('is NOT field')
+            end
         end
     end
     fprintf(char(10))  % new line

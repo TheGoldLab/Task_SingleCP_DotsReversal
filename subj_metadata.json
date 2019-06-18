@@ -1,180 +1,32 @@
 {
-    "AERtest": {
-        "session1": {
-            "trialFolder": "Blocks003/",
-            "sessionTag": "2019_06_17_18_00",
-            "Tut1": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Quest": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Tut2": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block2": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Tut3": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block3": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block4": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block5": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block6": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block7": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block8": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block9": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block10": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block11": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            }
-        },
-        "session2": {
-            "trialFolder": "Blocks003/",
-            "sessionTag": "2019_06_17_18_36",
-            "Tut1": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Quest": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Tut2": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block2": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Tut3": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block3": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block4": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block5": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block6": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block7": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block8": {
-                "completed": "true",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block9": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block10": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            },
-            "Block11": {
-                "completed": "false",
-                "aborted": "",
-                "reward": "",
-                "numTrials": ""
-            }
-        }
-    }
+	"AERtest": {
+		"session1": {
+			"trialFolder": "Blocks003",
+			"sessionTag": "2019_06_18_11_43",
+			"Tut1": {
+				"completed": 1,
+				"aborted": 0,
+				"reward": 0,
+				"numTrials": 20
+			},
+			"Quest": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 5
+			},
+			"Tut2": {
+				"completed": 1,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 5
+			},
+			"Block2": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 1
+			}
+		}
+	}
 }
