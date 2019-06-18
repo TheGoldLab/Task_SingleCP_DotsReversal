@@ -37,7 +37,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'correctPlayableIndex',       1,    ...
             'errorPlayableIndex',         2,    ...
             'deactivateConsoleStatus',    true, ...
-            'recordDotsPositions',        false);   % flag controlling whether to store dots positions or not
+            'recordDotsPositions',        false, ...
+            'subjectCode',                '');   % flag controlling whether to store dots positions or not
         
         % Timing properties
         timing = struct( ...
@@ -265,6 +266,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         isDualReport = false;
         
         getMoney = false;
+        
+        metadatafile = 'subj_metadata.json';
     end
     
     properties (SetAccess = protected)      
@@ -278,6 +281,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Check for changes in properties that require drawables to be
         %  recomputed
         targetDistance;
+        
     end
     
     methods       
@@ -624,6 +628,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             pause(0.1)
             early_abort = false;
             tot_trials = numel(self.trialData);
+            valid_trials = 0;
             for t = 1:tot_trials
                 trial = self.trialData(t);
                 if isnan(trial.dirCorrect)
@@ -635,6 +640,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     block_reward = 0;
                     break
                 end
+                valid_trials = valid_trials + 1;
             end
             
             % compute money reward
@@ -654,7 +660,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                         end
                         self.getMoney = (full_correct_counter / trial_counter) > 0.75;
                         if self.getMoney
-                            block_reward = 2;
+                            if strcmp(self.name, 'Block2')
+                                block_reward = 2;
+                            else
+                                block_reward = 4;
+                            end
+                            
                             self.helpers.feedback.show('text', ...
                                 {['Well done! You earned $', ...
                                 num2str(block_reward)], ...
@@ -701,10 +712,48 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             fprintf(char(10))
             
             
-            % store metadata 
+            % store metadata
             
+            % first get the session struct
+            fullMetaData = loadjson(self.metadatafile);
+            allSessions = fieldnames(fullMetaData.(self.settings.subjectCode));
+            lastSessionName = allSessions{end};
+            if self.taskID == 1  
+                % for first block in session, create struct
+                currSessionName = [lastSessionName(1:end-1),...
+                    num2str(str2double(lastSessionName(end))+1)];
+               
+                fullMetaData.(self.settings.subjectCode).(currSessionName) = struct();
+                
+                fullMetaData.(self.settings.subjectCode).(currSessionName).trialFolder = 'Blocks003/';
+                stg = self.caller.filename(end-31:end-16);
+                fullMetaData.(self.settings.subjectCode).(currSessionName).sessionTag = stg;
+                
+            else
+                currSessionName = lastSessionName;
+            end
+            subjStruct = fullMetaData.(self.settings.subjectCode);
             
+            % initialize block struct
+            subjStruct.(currSessionName).(self.name) = struct();
+            subjBlockStruct = subjStruct.(currSessionName).(self.name);
             
+            if strcmp(self.name(1:3), 'Tut')
+                iscomplete = valid_trials > 0;
+            else
+                iscomplete = block_reward > 0;
+            end
+            
+            % then fill out the struct with task data
+            subjBlockStruct.completed = iscomplete; 
+            subjBlockStruct.aborted = early_abort;
+            subjBlockStruct.reward = block_reward;
+            subjBlockStruct.numTrials = valid_trials;
+            
+            % then save back struct to metadata file
+            fullMetaData.(self.settings.subjectCode).(currSessionName).(self.name) = ...
+                subjBlockStruct;
+            savejson('', fullMetaData, self.metadatafile);
         end
         
         %% Start trial
