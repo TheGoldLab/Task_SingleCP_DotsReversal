@@ -50,6 +50,7 @@ settings = { ...
     'showSmileyFace',             .2, ...
     'trialFolder',                '', ...
     'accruedReward',               0, ...
+    'questThreshold',             0
     };
 
 % Update from argument list (property/value pairs)
@@ -185,6 +186,7 @@ for ii = 1:2:length(taskSpecs)
         task.trialSettings.loadFromFile = false;
         task.timing.showSmileyFace = .5;
     else
+        task.questThreshold = topNode.nodeData{'Settings'}{'questThreshold'};
         task.trialSettings.loadFromFile = true;
         task.trialSettings.numTrials = taskSpecs{ii+1};
         task.trialSettings.csvFile = [trial_folder, taskSpecs{ii}, '.csv'];
@@ -197,12 +199,12 @@ for ii = 1:2:length(taskSpecs)
         end
     end
         
-    % Add some fevalables to show instructions/feedback before/after tasks
-    if ii == 1
-%         task.addCall('start', welcome);
-%     else
-%         task.addCall('start', countdown);
-    end
+%     % Add some fevalables to show instructions/feedback before/after tasks
+%     if ii == 1
+% %         task.addCall('start', welcome);
+% %     else
+% %         task.addCall('start', countdown);
+%     end
     
     % Add as child to the maintask.
     topNode.addChild(task);

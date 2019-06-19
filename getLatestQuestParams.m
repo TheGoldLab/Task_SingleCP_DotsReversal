@@ -8,6 +8,10 @@ filename = 'subj_metadata.json';
 ds = loadjson(filename);
 if isfield(ds, sc)
     currDs = ds.(sc);  % struct for this subject
+    if isempty(currDS)
+        questParams=[];
+        return
+    end
     sessionNames = fieldnames(currDs);  % cell array of field names
     numSessions = length(fieldnames(currDs));
     questParams = [];
@@ -25,6 +29,9 @@ if isfield(ds, sc)
                 % just override previous write to questParams to get the
                 % latest
                 questParams = sessStruct.Quest.QuestFit;
+                if length(questParams) > 0
+                    questParams = questParams(1);
+                end
             end
         end
     end

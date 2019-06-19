@@ -268,6 +268,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         getMoney = false;
         
         metadatafile = 'subj_metadata.json';
+        questThreshold = 0;
     end
     
     properties (SetAccess = protected)      
@@ -568,23 +569,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 self.setIndependentVariableByName('condProbCP', 'values', 0);
                 self.setIndependentVariableByName('viewingDuration', ...
                     'values', self.questSettings.viewingDuration);      
-            elseif ~isempty(self.settings.useQuest) % when we are running the task AFTER a Quest node
-                % get Quest threshold
-                questThreshold = self.settings.useQuest.getQuestThreshold( ...
-                    self.settings.coherencesFromQuest);
-                
-                % get coherence value corresponding to 98 pCorrect
-%                 questHighCoh = self.settings.useQuest.getQuestCoh(.98);
-%                 if questHighCoh > 100
-%                     questHighCoh = 100;
-%                 end
+            else % when we are running the task AFTER some prior Quest data has been recorded
                 questHighCoh = 100;
 
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
-                    [0, questThreshold, questHighCoh]);
+                    [0, self.questThreshold, questHighCoh]);
                 self.setIndependentVariableByName('coherence', 'priors', ...
-                    [30 40 30]);
+                    []);
             end
             
             
