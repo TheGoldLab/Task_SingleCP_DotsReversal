@@ -1,23 +1,16 @@
 classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
     % @class topsTreeNodeTaskRTDots
     %
-    % Response-time dots (RTD) task
-    %
-    % For standard configurations, call:
-    %  topsTreeNodeTaskRTDots.getStandardConfiguration
-    %
-    % Otherwise:
-    %  1. Create an instance directly:
-    %        task = topsTreeNodeTaskRTDots();
-    %
-    %  2. Set properties. These are required:
-    %        task.screenEnsemble
-    %        task.helpers.readers.theObject
-    %     Others can use defaults
-    %
-    %  3. Add this as a child to another topsTreeNode
+    % recall the sequence of blocks
+    %   Tut1    Tutorial 1
+    %   Quest   Block 1 (Quest)
+    %   Tut2    Tutorial 2
+    %   Block2  Block 2 (standard dots task)
+    %   Tut3    Tutorial 3
+    %   Block3  Blocks 3+ (dual-report task)
     %
     % 11/28/18 created by aer / reviewed by jig
+    % 
     
     properties % (SetObservable) % uncomment if adding listeners
         
@@ -31,71 +24,125 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %     [min mean max]      ... specify as pick from exponential distribution
         %     'indep'             ... specified in self.independentVariables
         settings = struct( ...
-            'minTrialsPerCondition',      10,   ...
             'useQuest',                   [],   ...
             'coherencesFromQuest',        [],   ...
             'possibleDirections',         [0 180],   ...
-            'directionPriors',            [50 50], ... % change For asymmetric priors
+            'directionPriors',            [],   ... % change For asymmetric priors
             'referenceRT',                [],   ...
             'fixationRTDim',              0.4,  ...
-            'targetDistance',             8,    ...
+            'targetDistance',             10,   ... % meaning 10 degs to the left and right of fp, as in Palmer/Huk/Shadlen/2005
             'textStrings',                '',   ...
             'correctImageIndex',          1,    ...
             'errorImageIndex',            3,    ...
             'correctPlayableIndex',       1,    ...
-            'errorPlayableIndex',         2);
+            'errorPlayableIndex',         2,    ...
+            'deactivateConsoleStatus',    true, ...
+            'recordDotsPositions',        false, ...
+            'subjectCode',                '');   % flag controlling whether to store dots positions or not
         
         % Timing properties
         timing = struct( ...
-            'showInstructions',          10.0, ...
+            'showInstructions',          0, ...
             'waitAfterInstructions',     0.5, ...
             'fixationTimeout',           5.0, ...
-            'holdFixation',              0.5, ...
+            'holdFixation',              0.2, ...
             'showSmileyFace',            0.5, ...
             'showFeedback',              1.0, ...
-            'interTrialInterval',        1.0, ...
-            'preDots',                   [0.2 0.5 1.0],... % truncated exponential time between fixation and dots onset
+            'interTrialInterval',        1.0, ...          % as in Palmer/Huk/Shadlen 2005
+            'preDots',                   [0.2 0.7 4.8],... % truncated exponential time between fixation and dots onset as in Palmer/Huk/Shadlen 2005. Actual code is this one: https://github.com/TheGoldLab/Lab-Matlab-Control/blob/c4bebf2fc40111ca4c58f801bc6f9210d2a824e6/tower-of-psych/foundation/runnable/topsStateMachine.m#L534
             'dotsDuration1',             [],  ...
             'dotsDuration2',             [],  ...
             'dotsTimeout',               5.0, ...
-            'choiceTimeout',             3.0);
+            'dirChoiceTimeout',          3.0, ...
+            'cpChoiceTimeout',           8.0);
+        
+        % settings about the trial sequence to use
+        trialSettings = struct( ...
+            'numTrials',        204, ... % theoretical number of valid trials per block
+            'loadFromFile',     false,      ... % load trial sequence from files?
+            'csvFile',          '',         ... % file of the form filename.csv
+            'jsonFile',         '');        ... % file of the form filename_metadata.json
         
         % Quest properties
         questSettings = struct( ...
-            'stimRange',                 20*log10((0:100)/100),   ...
-            'thresholdRange',            20*log10((1:99)/100),     ...
-            'slopeRange',                1:5,      ...
-            'guessRate',                 0.5,      ...
-            'lapseRange',                0.00:0.01:0.05, ...
-            'recentGuess',               []);
-        
-        % Fields below are optional but if found with the given names
-        %  will be used to automatically configure the task
-        
+            'stimRange',                 0:100,           ... % coherence levels 
+            'thresholdRange',            0.5:.5:100,      ... % cannot start at 0 with Weibull
+            'slopeRange',                2,               ... % we don't estimate the slope
+            'guessRate',                 0.5,             ... % because it is a 2AFC task
+            'lapseRange',                0.001,           ... % this lapse will affect percent correct at threshold, so we estimate it
+            'recentGuess',               [],              ...
+            'viewingDuration',           .4);             % stimulus duration for Quest (sec)
+           
         % Array of structures of independent variables, used by makeTrials
+        % NOTE: DO NOT CHANGE THE ORDERING OF THE ENTRIES BELOW!
+        % 1. initDirection
+        % 2. coherence
+        % 3. viewingDuration
+        % 4. condProbCP
+        % 5. timeCP
         independentVariables = struct( ...
-            'name',        {'initDirection', ...
-            'coherence', ...
-            'viewingDuration', ...
-            'probCP', ...
-            'timeCP'}, ...
-            'values',      {[0 180], ...           %initDirection
-            [6.4 12.8 25.6], ...     %coherence
-            .1:.1:.3, ...                          %viewingDuration
-            .5, ...                          %probCP
-            .2}, ...                        %timeCP
+            'name',        {...
+                'initDirection',   ...
+                'coherence',       ...
+                'viewingDuration', ...
+                'condProbCP',          ...
+                'timeCP'},         ...
+            'values',      {...
+                [0 180],           ... % allowed initial directions
+                [10 30 70],        ... % coherence values, if not a Quest
+                .1:.1:.4,          ... % viewingDuration (sec)
+                .5,                ... % probability of CP, given that the trial is longer than timeCP
+                .2},               ... % time of CP
             'priors',      {[], [], [], [], []});
         
         % dataFieldNames are used to set up the trialData structure
-        trialDataFields = {'RT', 'choice', 'correct', ...
-            'initDirection', 'endDirection', 'presenceCP', ...
+        trialDataFields = {...
+            'dirRT', ...
+            'dirChoice', ...
+            'dirCorrect', ...
+            'cpRT', ...
+            'cpChoice', ...
+            'cpCorrect', ...
+            'initDirection', ...
+            'endDirection', ...
+            'presenceCP', ...
             'coherence', ...
             'viewingDuration', ...
-            'probCP', ...
+            'condProbCP', ...
             'timeCP', ...
-            'randSeedBase', 'fixationOn', 'fixationStart', 'targetOn', ...
-            'dotsOn', 'dotsOff', 'choiceTime', 'targetOff', 'fixationOff', 'feedbackOn'};
+            'randSeedBase', ...
+            'fixationOn', ...
+            'fixationStart', ...
+            'targetOn', ...
+            'dotsOn', ...
+            'dotsOff', ...
+            'dirChoiceTime', ...
+            'dirReleaseChoiceTime', ...
+            'cpChoiceTime', ...
+            'targetOff', ...
+            'fixationOff', ...
+            'feedbackOn', ...
+            'CPresponseSide', ...
+            'startResponseTwo'};
         
+        
+        % empty struct that will later be filled, only if 
+        % self.settings.recordDotsPositions is true. 
+        %%%%%%%%%%%%%%%%%%%%%%%%
+        % Description of fields:
+        %  dotsPositions is a 1-by-JJ cell, where JJ is the number of 
+        %                trials run in the experiment. Each entry of the 
+        %                cell will contain matrix equal to 
+        %                dotsDrawableDotKinetogram.dotsPositions
+        %  dumpTime      is a cell array of times, each computed as
+        %                feval(self.clockFunction).
+        %                The times are computed by the dumpDots() method, 
+        %                once at the end of every trial. They should be
+        %                compared to the 'trialStart' time stamp in order
+        %                to assign a sequence of dots frames to a
+        %                particular trial.
+        dotsInfo = struct('dotsPositions', [], 'dumpTime', []);  
+                
         % Drawables settings
         drawable = struct( ...
             ...
@@ -108,18 +155,19 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'settings',                   struct( ...
             'xCenter',                    0,                ...
             'yCenter',                    0,                ...
-            'nSides',                     4,                ...
-            'width',                      1.0.*[1.0 0.1],   ...
-            'height',                     1.0.*[0.1 1.0],   ...
-            'colors',                     [1 1 1])),        ...
+            'nSides',                     100,                ...
+            'width',                      .4,   ...% 0.4 deg vis. angle as in Palmer/Huk/Shadlen 2005
+            'height',                     .4,   ...
+            'colors',                     [1 0 0])),        ...% red as in Palmer/Huk/Shadlen 2005, and blue at dotsOn
             ...
             ...   % Targets drawable settings
             'targets',                    struct( ...
             'fevalable',                  @dotsDrawableTargets, ...
             'settings',                   struct( ...
             'nSides',                     100,              ...
-            'width',                      1.5.*[1 1],       ...
-            'height',                     1.5.*[1 1])),      ...
+            'width',                      .8*ones(1,2),       ... % 0.8 deg vis. angle as in Palmer/Huk/Shadlen 2005
+            'height',                     .8*ones(1,2), ...
+            'colors',                     [1 0 0])),        ...% red as in Palmer/Huk/Shadlen 2005)   ...
             ...
             ...   % Smiley face for feedback
             'smiley',                     struct(  ...
@@ -136,10 +184,23 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'yCenter',                    0,                ...
             'coherenceSTD',               10,               ...
             'stencilNumber',              1,                ...
-            'pixelSize',                  4,                ...
-            'diameter',                   10,                ...
-            'density',                    90,              ...
-            'speed',                      2.1))));
+            'pixelSize',                  6,                ... % Palmer/Huk/Shadlen 2005 use 3, but they have 25.5 px per degree!
+            'diameter',                   5,                ... % as in Palmer/Huk/Shadlen 2005
+            'density',                    90,               ... % 16.7 in Palmer/Huk/Shadlen 2005
+            'speed',                      5,                ... % as in Palmer/Huk/Shadlen 2005 (and 3 interleaved frames)
+            'recordDotsPositions',        false)), ...
+            ...   % CP Targets drawable settings
+            'cpLeftTarget',               struct( ...
+            'fevalable',                  @dotsDrawableText, ...
+            'settings',                   struct( ...
+            'x',                          -12, ...
+            'y',                          0)), ...
+            ...
+            'cpRightTarget',              struct( ...
+            'fevalable',                  @dotsDrawableText, ...
+            'settings',                   struct( ...
+            'x',                          12, ...
+            'y',                          0))));              
         
         % Readable settings
         readable = struct( ...
@@ -161,16 +222,31 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ...   % The keyboard events .. 'uiType' is used to conditinally use these depending on the theObject type
             'dotsReadableHIDKeyboard',    struct( ...
             'start',                      {{@defineEventsFromStruct, struct( ...
-            'name',                       {'holdFixation', 'choseLeft', 'choseRight'}, ...
-            'component',                  {'KeyboardSpacebar', 'KeyboardLeftArrow', 'KeyboardRightArrow'}, ...
-            'isRelease',                  {true, false, false})}}), ...
+            'name',                       {'holdFixation', 'choseLeft', 'choseRight', 'choseCP', 'choseNOCP'}, ...
+            'component',                  {'KeyboardSpacebar', 'KeyboardLeftArrow', 'KeyboardRightArrow', 'KeyboardC', 'KeyboardN'}, ...
+            'isRelease',                  {true, false, false, false, false})}}), ...
             ...
             ...   % Gamepad
             'dotsReadableHIDGamepad',     struct( ...
             'start',                      {{@defineEventsFromStruct, struct( ...
-            'name',                       {'holdFixation', 'choseLeft', 'choseRight'}, ...
-            'component',                  {'Button1', 'Trigger1', 'Trigger2'}, ...
-            'isRelease',                  {true, false, false})}}), ...
+            'name',                       {'holdFixation', ...  % A button
+                                            'choseLeft', ...    % left trigger
+                                            'choseRight', ...   % right trigger
+                                            'startTask', ...    % B button
+                                            'choseCP', ...      % X button
+                                            'choseNOCP'}, ...   % Y button
+            'component',                  {'Button1', ...  % button ID 3
+                                            'Trigger1', ...% button ID 7
+                                            'Trigger2', ...% button ID 8
+                                            'Button2', ... % button ID 4
+                                            'Button3', ... % button ID 5
+                                            'Button4'}, ...% button ID 6
+            'isRelease',                  {true, ...
+                                           false, ...
+                                           false, ...
+                                           false, ...
+                                           false, ...
+                                           false})}}), ...
             ...
             ...   % Ashwin's magic buttons
             'dotsReadableHIDButtons',     struct( ...
@@ -184,23 +260,31 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             'start',                      {{@defineEventsFromStruct, struct( ...
             'name',                       {'holdFixation'}, ...
             'component',                  {'auto_1'})}}))));
+        
+        % requests for 2 responses if true; for decide on direction, then
+        % decide on presence/absence of change point
+        isDualReport = false;
+        
+        getMoney = false;
+        
+        metadatafile = 'subj_metadata.json';
     end
     
-    properties (SetAccess = protected)
+    properties (SetAccess = protected)      
         
         % The quest object
         quest;
         
         % Boolean flag, whether the specific trial has a change point or not
         isCP;
-        
+            
         % Check for changes in properties that require drawables to be
         %  recomputed
         targetDistance;
+        
     end
     
-    methods
-        
+    methods       
         %% Constructor
         %  Use topsTreeNodeTask method, which can parse the argument list
         %  that can set properties (even those nested in structs)
@@ -211,16 +295,261 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             self = self@topsTreeNodeTask(varargin{:});
         end
         
+        %% Make trials (overloaded)
+        % this method exists in the super class, but for now, I reimplement
+        % it as I find it to be buggy in the superclass.
+        %
+        %  Utility to make trialData array using array of structs (independentVariables),
+        %     which must be a property of the given task with fields:
+        %
+        %     1. name: string name
+        %     2. values: vector of unique values
+        %     3. priors: vector of priors (or empty for equal priors)
+        %
+        %  trialIterations is number of repeats of each combination of
+        %     independent variables
+        %
+        function makeTrials(self, independentVariables, trialIterations)
+            % 
+            if self.trialSettings.loadFromFile
+                trialsTable = ...
+                    readtable(self.trialSettings.csvFile);
+                metaData = ...
+                    loadjson(self.trialSettings.jsonFile);
+                
+                % set values that are common to all trials
+                self.trialSettings.numTrials = self.trialIterations;
+                ntr = self.trialSettings.numTrials;
+                
+                % produce copies of trialData struct to render it ntr x 1
+                self.trialData = repmat(self.trialData(1), ntr, 1);
+                
+                % taskID
+                [self.trialData.taskID] = deal(self.taskID);
+                
+                % condProbCP
+                [self.trialData.condProbCP] = ...
+                    deal(metaData.cond_prob_cp);
+                
+                % timeCP
+                [self.trialData.timeCP] = ...
+                    deal(self.independentVariables(5).values(1));
+                
+                trlist = num2cell(1:ntr);
+                
+                % trialIndex
+                [self.trialData.trialIndex] = deal(trlist{:});
+                
+                % set values that are specific to each trial
+                for tr = 1:ntr
+                    
+                    % initDirection
+                    if strcmp(trialsTable.dir(tr), 'left')
+                        self.trialData(tr).initDirection = 180;
+                    else
+                        self.trialData(tr).initDirection = 0;
+                    end
+                    
+                    % endDirection and presenceCP
+                    if strcmp(trialsTable.cp(tr), 'True')
+                        self.trialData(tr).endDirection = ...
+                            self.flipDirection( ...
+                                self.trialData(tr).initDirection);
+                        self.trialData(tr).presenceCP = 1.0;  % numeric for FIRA
+                    else
+                        self.trialData(tr).endDirection = ...
+                                self.trialData(tr).initDirection;
+                        self.trialData(tr).presenceCP = 0;
+                    end
+                    
+                    % coherence (3 possible values)
+                    
+                    cohMetaData = trialsTable.coh(tr);
+                    if isnumeric(cohMetaData)
+                        cohMetaData = num2str(cohMetaData);
+                    end
+                    if strcmp(cohMetaData, '0')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(1);
+                    elseif strcmp(cohMetaData, 'th')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(2);
+                    elseif strcmp(cohMetaData, '100')
+                        self.trialData(tr).coherence = ...
+                            self.independentVariables(2).values(3);
+                    end
+                        
+                    % viewingDuration
+                    self.trialData(tr).viewingDuration = ...
+                        trialsTable.vd(tr) / 1000;
+
+                end
+                
+            % we only use the old makeTrials() for the Quest node
+            elseif strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1')
+                % if trialIterations arg is not provided or is empty, set it to
+                % 1
+                if nargin < 3 || isempty(trialIterations)
+                    trialIterations = 1;
+                end
+
+                % Loop through to set full set of values for each variable
+                for ii = 1:length(independentVariables)
+
+                    % now do something only if priors field is nonempty
+                    %
+                    % update values based on priors, if they are given in the
+                    % format: [proportion_value_1 proportion_value_2 ... etc]
+                    %
+                    % check that priors vector has same length as values
+                    % vector, and that the sum of the entries in priors is
+                    % positive
+                    if length(independentVariables(ii).priors) == ...
+                            length(independentVariables(ii).values) && ...
+                            sum(independentVariables(ii).priors) > 0
+
+                        % TOTEST
+                        % rescale priors by greatest common divisor
+                        priors = independentVariables(ii).priors;
+                        priors = priors./gcd(sym(priors));
+
+                        % TOTEST -- what does this currently do?
+                        % now re-make values array based on priors
+                        values = [];
+                        for jj = 1:length(priors)
+                            values = cat(1, values, repmat( ...
+                                independentVariables(ii).values(jj), priors(jj), 1));
+                        end
+
+                        % re-save the values
+                        independentVariables(ii).values = values;
+                    end
+                end
+
+                % get values as cell array and make ndgrid
+                values = {independentVariables.values};
+                grids  = cell(size(values));
+                  [grids{:}] = ndgrid(values{:});
+
+                % update trialData struct array with "trialIterations" copies of
+                % each trial, defined by unique combinations of the independent
+                % variables
+                ntr = numel(grids{1}) * trialIterations;
+                self.trialData = repmat(self.trialData(1), ntr, 1);
+                [self.trialData.taskID] = deal(self.taskID);
+                trlist = num2cell(1:ntr);
+                [self.trialData.trialIndex] = deal(trlist{:});
+                [self.trialData.presenceCP] = deal(0);
+
+                % loop through the independent variables and set in each trialData
+                % struct. Make sure to repeat each set trialIterations times.
+                for ii = 1:length(independentVariables)
+                    values = num2cell(repmat(grids{ii}(:), trialIterations, 1));
+                    [self.trialData.(independentVariables(ii).name)] = deal(values{:});
+                end
+            end
+        end
+        
+%         %% debug cross
+%         function debug_cross(self)
+%             
+%             % ---- Activate event and check for it
+%             %
+%             self.helpers.reader.theObject.setEventsActiveFlag({'x','y'})
+%             xeventName = self.helpers.reader.readEvent({'x'});
+%             yeventName = self.helpers.reader.readEvent({'y'});
+%             
+%             
+%             
+%             % Nothing... keep checking
+%             while isempty(xeventName) && isempty(yeventName)
+%                 self.helpers.feedback.show('text', ...
+%                     {'waiting for cross press'}, ...
+%                     'showDuration', 0.1, ...
+%                     'blank', false);
+%                 
+%                 xeventName = self.helpers.reader.readEvent({'x'});
+%                 yeventName = self.helpers.reader.readEvent({'y'});
+%             end
+%             
+%             if ~isempty(xeventName)
+%                 ev='x';
+%             elseif ~isempty(yeventName)
+%                 ev='y';
+%             end
+%             
+%             self.helpers.feedback.show('text', ...
+%                 ['event ',ev,' detected!'], ...
+%                 'showDuration', 3.5, ...
+%                 'blank', true);
+%         end
+        
+        %% Self paced break screen
+        function self_paced_break(self)
+            
+            % ---- Activate event and check for it
+            %
+            self.helpers.reader.theObject.setEventsActiveFlag('startTask')
+            eventName = self.helpers.reader.readEvent({'startTask'});
+            
+
+            
+            % Nothing... keep checking
+            while isempty(eventName)
+                if ismember(self.name,{'Tut1', 'Tut2', 'Tut3', 'Quest', 'Block2', 'Block3'})
+                    self.helpers.feedback.show('text', ...
+                        {['You may start the next block by pressing', ...
+                        ' the B button.']}, ...
+                        'showDuration', 0.1, ...
+                        'blank', false);
+                else
+                    breakstr = 'Take a break if you wish.';
+                    self.helpers.feedback.show('text', ...
+                        {breakstr,  ...
+                        ['You may start the next block by pressing', ...
+                        ' the B button.']}, ...
+                        'showDuration', 0.1, ...
+                        'blank', false);
+                end
+                
+                eventName = self.helpers.reader.readEvent({'startTask'});
+            end
+            if ~isempty(self.trialSettings.jsonFile) && ~ismember(self.name, {'Tut1', 'Tut2', 'Tut3', 'Block2'})
+                metaData = ...
+                    loadjson(self.trialSettings.jsonFile);
+                if metaData.prob_cp < 0.5
+                    cpfreq = 'a LOW';
+                elseif metaData.prob_cp == 0.5
+                    cpfreq = 'a MEDIUM';
+                elseif metaData.prob_cp == .8
+                    cpfreq = 'a HIGH';
+                end
+                self.helpers.feedback.show('text', ...
+                    ['This block has ',cpfreq,' number of switch trials'], ...
+                    'showDuration', 6.5, ...
+                    'blank', true);
+            end
+        end
+        
         %% Start task (overloaded)
         %
         % Put stuff here that you want to do before each time you run this
         % task
         function startTask(self)
+            % manually add dummy events related to x and y directions of
+            % directional cross on gamepad
+            readableObj = self.helpers.reader.theObject;
+            if isa(readableObj,'dotsReadableHIDGamepad')
+                readableObj.defineEvent('x', 'component', 9);
+                readableObj.defineEvent('y', 'component', 10);
+            end
+            
+            self.trialIterationMethod = 'sequential';  % enforce sequential
+            self.randomizeWhenRepeating = false;
             
             % ---- Set up independent variables if Quest task
             %
-            if strcmp(self.name, 'Quest')
-                
+            if strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1') % when we are running the task as Quest node
                 % Initialize and save Quest object
                 self.quest = qpInitialize(qpParams( ...
                     'stimParamsDomainList', { ...
@@ -229,29 +558,63 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     self.questSettings.thresholdRange, ...
                     self.questSettings.slopeRange, ...
                     self.questSettings.guessRate, ...
-                    self.questSettings.lapseRange}));
+                    self.questSettings.lapseRange}, ...
+                    'qpOutcomeF',@(x) qpSimulatedObserver(x,@qpPFStandardWeibull,simulatedPsiParams), ...
+                    'qpPF', @qpPFStandardWeibull));
                 
                 % Update independent variable struct using initial value
                 self.setIndependentVariableByName('coherence', 'values', ...
                     self.getQuestGuess());
+                self.setIndependentVariableByName('condProbCP', 'values', 0);
+                self.setIndependentVariableByName('viewingDuration', ...
+                    'values', self.questSettings.viewingDuration);      
+            elseif ~isempty(self.settings.useQuest) % when we are running the task AFTER a Quest node
+                % get Quest threshold
+                questThreshold = self.settings.useQuest.getQuestThreshold( ...
+                    self.settings.coherencesFromQuest);
                 
-            elseif ~isempty(self.settings.useQuest)
-                
-                % Update independent variable struct using Quest threshold
+                % get coherence value corresponding to 98 pCorrect
+%                 questHighCoh = self.settings.useQuest.getQuestCoh(.98);
+%                 if questHighCoh > 100
+%                     questHighCoh = 100;
+%                 end
+                questHighCoh = 100;
+
+                % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
-                    self.settings.useQuest.getQuestThreshold( ...
-                    self.settings.coherencesFromQuest));
+                    [0, questThreshold, questHighCoh]);
+                self.setIndependentVariableByName('coherence', 'priors', ...
+                    [30 40 30]);
             end
+            
+            
+%             % debug
+%             self.debug_cross()
+%             
+            
+            % ---- Self-paced break screen
+            % we offer the subject the possibility to take a break
+            % the subject triggers the start of the task with a key press
+            
+            self.self_paced_break()
             
             % ---- Initialize the state machine
             %
             self.initializeStateMachine();
+            
+
             
             % ---- Show task-specific instructions
             %
             self.helpers.feedback.show('text', self.settings.textStrings, ...
                 'showDuration', self.timing.showInstructions);
             pause(self.timing.waitAfterInstructions);
+            
+            % pre-allocate cell size to record dots positions and states
+            if self.settings.recordDotsPositions
+                self.dotsInfo.dotsPositions = cell(1,length(self.trialIndices));
+                self.dotsInfo.dumpTime = self.dotsInfo.dotsPositions;
+            end
         end
         
         %% Finish task (overloaded)
@@ -259,49 +622,185 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % Put stuff here that you want to do after each time you run this
         % task
         function finishTask(self)
+            % fetch current total accrued reward for this session
+            curr_tot_reward = ...
+                self.caller.nodeData.getItemFromGroupWithMnemonic('Settings', 'accruedReward');
+            pause(0.1)
+            early_abort = false;
+            tot_trials = numel(self.trialData);
+            valid_trials = 0;
+            for t = 1:tot_trials
+                trial = self.trialData(t);
+                if isnan(trial.dirCorrect)
+                    early_abort = true;
+                    block_reward = 0;
+                    break
+                elseif isnan(trial.cpCorrect) && self.isDualReport
+                    early_abort = true;
+                    block_reward = 0;
+                    break
+                end
+                valid_trials = valid_trials + 1;
+            end
+            
+            % compute money reward
+            if length(self.name) > 4  % it is either a BlockX or Quest
+                if strcmp(self.name(1:5), 'Block')
+                    full_correct_counter = 0;
+                    trial_counter = 0;
+                    if ~early_abort
+                        for t = 1:tot_trials
+                            trial = self.trialData(t);
+                            if trial.coherence == 100
+                                trial_counter = trial_counter + 1;
+                                if trial.dirCorrect && trial.cpCorrect
+                                    full_correct_counter = full_correct_counter + 1;
+                                end
+                            end
+                        end
+                        self.getMoney = (full_correct_counter / trial_counter) > 0.75;
+                        if self.getMoney
+                            if strcmp(self.name, 'Block2')
+                                block_reward = 2;
+                            else
+                                block_reward = 4;
+                            end
+                            
+                            self.helpers.feedback.show('text', ...
+                                {['Well done! You earned $', ...
+                                num2str(block_reward)], ...
+                                ['Total = $', num2str(curr_tot_reward + block_reward)]}, ...
+                                'showDuration', 4.5, ...
+                                'blank', false);
+                            
+                        else
+                            self.helpers.feedback.show('text', ...
+                                {'You did not earn additional money on this block.', ...
+                                'Let us know if something is wrong.'}, ...
+                                'showDuration', 4.5, ...
+                                'blank', false);
+                            block_reward = 0;
+                        end
+                    else
+                        self.getMoney = false;
+                    end
+                elseif strcmp(self.name(1:5), 'Quest')
+                    if ~early_abort
+                        block_reward = 2;
+                        self.helpers.feedback.show('text', ...
+                            ['You earned your first $', ...
+                            num2str(block_reward),' with this block!'], ...
+                            'showDuration', 4.5, ...
+                            'blank', false);
+                    end
+                end
+            else % it was a tutorial block
+                block_reward = 0;
+            end
+            curr_tot_reward = curr_tot_reward + block_reward;
+            
+            % store reward entries in topsGroupedList from parent topNode
+            self.caller.nodeData.addItemToGroupWithMnemonic(curr_tot_reward, 'Settings', 'accruedReward');
+            self.caller.nodeData.addItemToGroupWithMnemonic(block_reward, 'Settings', [self.name,'_reward']);
+            
+            fprintf('=============================================================')
+            fprintf(char(10))
+            fprintf(' End of %s, block reward %d, total reward %d, aborted block=%d', ...
+                self.name, block_reward, curr_tot_reward, early_abort)
+            fprintf(char(10))
+            fprintf('=============================================================')
+            fprintf(char(10))
+            
+            
+            % store metadata
+            
+            % first get the session struct
+            fullMetaData = loadjson(self.metadatafile);
+            tmpStruct=fullMetaData.(self.settings.subjectCode);
+            if isempty(tmpStruct)
+                lastSessionName = 'session0';
+            else
+                allSessions = fieldnames(tmpStruct);
+                lastSessionName = allSessions{end};
+            end
+            
+            if self.taskID == 1  
+                % for first block in session, create struct
+                currSessionName = [lastSessionName(1:end-1),...
+                    num2str(str2double(lastSessionName(end))+1)];
+               
+                fullMetaData.(self.settings.subjectCode).(currSessionName) = struct();
+                
+                fullMetaData.(self.settings.subjectCode).(currSessionName).trialFolder = 'Blocks003';
+                stg = self.caller.filename(end-31:end-16);
+                fullMetaData.(self.settings.subjectCode).(currSessionName).sessionTag = stg;
+                
+            else
+                currSessionName = lastSessionName;
+            end
+            subjStruct = fullMetaData.(self.settings.subjectCode);
+            
+            % initialize block struct
+            subjStruct.(currSessionName).(self.name) = struct();
+            subjBlockStruct = subjStruct.(currSessionName).(self.name);
+            
+            if strcmp(self.name(1:3), 'Tut')
+                iscomplete = valid_trials > 0;
+            else
+                iscomplete = block_reward > 0;
+            end
+            
+            % then fill out the struct with task data
+            subjBlockStruct.completed = iscomplete; 
+            subjBlockStruct.aborted = early_abort;
+            subjBlockStruct.reward = block_reward;
+            subjBlockStruct.numTrials = valid_trials;
+            
+            % write Quest parameters if completed:
+            if strcmp(self.name, 'Quest') && iscomplete
+                psiParamsIndex = qpListMaxArg(self.quest.posterior);
+                subjBlockStruct.QuestFit = self.quest.psiParamsDomain(psiParamsIndex,:);
+            end
+            
+            % then save back struct to metadata file
+            fullMetaData.(self.settings.subjectCode).(currSessionName).(self.name) = ...
+                subjBlockStruct;
+            savejson('', fullMetaData, self.metadatafile);
         end
         
         %% Start trial
         %
         % Put stuff here that you want to do before each time you run a trial
         function startTrial(self)
-            
             % ---- check whether a CP will occur in this trial or not
             %
             
             % Get current task/trial
             trial = self.getTrial();
-            ensemble = self.helpers.stimulusEnsemble.theObject;
-            trial.initDirection = ensemble.getObjectProperty('direction',4);
+            %ensemble = self.helpers.stimulusEnsemble.theObject;
+            %initialDirection = ensemble.getObjectProperty('direction',4);
             
             % if CP time is longer than viewing duration, no CP
-            if trial.timeCP >= trial.viewingDuration
+
+            if trial.presenceCP
+                self.isCP = true;
+                self.timing.dotsDuration1 = trial.timeCP;
+                self.timing.dotsDuration2 = trial.viewingDuration - trial.timeCP;
+            else
                 self.isCP = false;
-                trial.presenceCP = 0;
-                trial.endDirection = trial.initDirection;
                 self.timing.dotsDuration1 = trial.viewingDuration;
                 self.timing.dotsDuration2 = 0;
-            else
-                if rand < trial.probCP
-                    self.isCP = true;
-                    trial.presenceCP = 1.0; % numeric because of FIRA
-                    trial.endDirection = self.flipDirection(trial.initDirection);
-                    self.timing.dotsDuration1 = trial.timeCP;
-                    self.timing.dotsDuration2 = trial.viewingDuration - trial.timeCP;
-                else
-                    self.isCP = false;
-                    trial.presenceCP = 0;
+                if isnan(trial.endDirection)
                     trial.endDirection = trial.initDirection;
-                    self.timing.dotsDuration1 = trial.viewingDuration;
-                    self.timing.dotsDuration2 = 0;
                 end
             end
-            
+
             self.setTrial(trial);
             
             % ---- Prepare components
             %
             self.prepareDrawables();
+            self.prepareReadables();
             self.prepareStateMachine();
             
             % jig sets the timing in the statelist
@@ -315,20 +814,38 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Show information about the task/trial
             %
             % Task information
-            taskString = sprintf('%s (task %d/%d): %d correct, %d error, mean RT=%.2f, epoch1=%.2f, epoch2=%.2f', ...
-                self.name, self.taskID, length(self.caller.children), ...
-                sum([self.trialData.correct]==1), sum([self.trialData.correct]==0), ...
-                nanmean([self.trialData.RT]), ...
-                self.timing.dotsDuration1, self.timing.dotsDuration2);
+            % string of the form
+            % <block name> (block X/Y): <num dir correct> dirCorrect, <>
+            taskString = sprintf('%s (block %d/%d): %d dirCorrect, %d dirError, mean dirRT=%.2f, %d cpCorrect, %d cpError, mean dirRT=%.2f, epoch1=%.2f, epoch2=%.2f dualReport=%d', ...
+                self.name, ...
+                self.taskID, ...
+                length(self.caller.children), ...
+                sum([self.trialData.dirCorrect]==1), ...
+                sum([self.trialData.dirCorrect]==0), ...
+                nanmean([self.trialData.dirRT]), ...
+                sum([self.trialData.cpCorrect]==1), ...
+                sum([self.trialData.cpCorrect]==0), ...
+                nanmean([self.trialData.cpRT]), ...
+                self.timing.dotsDuration1, ...
+                self.timing.dotsDuration2, ...
+                self.isDualReport);
             
             % Trial information
             trial = self.getTrial();
-            trialString = sprintf('Trial %d/%d, dir=%d, coh=%.0f', self.trialCount, ...
-                numel(self.trialData)*self.trialIterations, trial.initDirection, trial.coherence);
+            trialString = sprintf('Trial %d/%d, init dir=%d, coh=%.0f', ...
+                self.trialCount, ...
+                numel(self.trialData), ...
+                trial.initDirection, ...
+                trial.coherence);
             
             % Show the information
             self.statusStrings = {taskString, trialString};
-            self.updateStatus(); % just update the second one
+            if self.settings.deactivateConsoleStatus
+                % Possibly update the gui using the new task
+                self.caller.updateGUI('_updateTaskStatus', self, 1:length(self.statusStrings));
+            else
+                self.updateStatus(); % just update the second one
+            end
         end
         
         %% Flip direction of dots
@@ -343,14 +860,17 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         %
         % Could add stuff here
         function finishTrial(self)
+            % add numFrames field to trial struct
+            trial = self.getTrial();
+            self.setTrial(trial);
             
             % Conditionally update Quest
-            if strcmp(self.name, 'Quest')
+            if strcmp(self.name, 'Quest') || strcmp(self.name, 'Tut1')
                 
                 % ---- Check for bad trial
                 %
                 trial = self.getTrial();
-                if isempty(trial) || ~(trial.correct >= 0)
+                if isempty(trial) || ~(trial.dirCorrect >= 0)
                     return
                 end
                 
@@ -358,7 +878,7 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 %
                 % (expects 1=error, 2=correct)
                 self.quest = qpUpdate(self.quest, self.questSettings.recentGuess, ...
-                    trial.correct+1);
+                    trial.dirCorrect+1);
                 
                 % Update next guess, if there is a next trial
                 if self.trialCount < length(self.trialIndices)
@@ -369,19 +889,101 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 % ---- Set reference coherence to current threshold
                 %        and set reference RT
                 %
-                self.settings.coherences  = self.getQuestThreshold( ...
+                self.settings.coherences = self.getQuestThreshold( ...
                     self.settings.coherencesFromQuest);
-                self.settings.referenceRT = nanmedian([self.trialData.RT]);
+                self.settings.referenceRT = nanmedian([self.trialData.dirRT]);
             end
         end
         
-        %% Check for choice
+        %% Check for direction choice
         %
         % Save choice/RT information and set up feedback for the dots task
-        function nextState = checkForChoice(self, events, eventTag)
+        function nextState = checkForDirChoice(self, events, eventTag)
             
             % ---- Check for event
             %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
+            eventName = self.helpers.reader.readEvent(events, self, eventTag);
+            
+            % Nothing... keep checking
+            if isempty(eventName)
+                nextState = [];
+                return
+            end
+            
+            % Get current task/trial
+            trial = self.getTrial();
+            trial.dirChoice = double(strcmp(eventName, 'choseRight'));
+            
+            % Compute RT wrt dotsOff
+            trial.dirRT = trial.dirChoiceTime - trial.dotsOff;
+            
+            if trial.dirRT < 0 || isnan(trial.dirRT)
+                nextState = 'blank';
+                pause(0.1)
+                self.helpers.feedback.show('text', ...
+                    {'You answered too soon.', ...
+                     'Please wait until the dots disappear.'}, ...
+                    'showDuration', 4, ...
+                    'blank', true);
+            else
+                % Jump to next state when done
+                if self.isDualReport
+                    nextState = 'waitForReleasFX';
+                else
+                    % Override completedTrial flag
+                    self.completedTrial = true;
+                    nextState = 'blank';
+                end
+                % Mark as correct/error
+                trial.dirCorrect = double( ...
+                    (trial.dirChoice==0 && trial.endDirection==180) || ...
+                    (trial.dirChoice==1 && trial.endDirection==0));
+                
+                % ---- Possibly show smiley face
+                if trial.dirCorrect == 1 && self.timing.showSmileyFace > 0 && ~self.isDualReport
+                    self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
+                    pause(self.timing.showSmileyFace);
+                end
+            end
+                       
+            % ---- Re-save the trial
+            %
+            self.setTrial(trial);
+        end
+        %% Check for direction choice trigger Release
+        %
+        % Save choice/RT information and set up feedback for the dots task
+        function nextState = checkForReleaseDirChoice(self, events, eventTag)
+            
+            % ---- Check for event
+            %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
+            eventName = self.helpers.reader.readEvent(events, self, eventTag);
+            
+            % Nothing... keep checking
+            if isempty(eventName)
+                nextState = [];
+                return
+            end
+            
+            % Jump to next state when done
+            nextState = 'blank1';
+
+            
+        end
+        
+        %% Check for CP choice 
+        %
+        % Save choice/RT information and set up feedback for the dots task
+        function nextState = checkForCPChoice(self, events, eventTag)
+            
+            % ---- Check for event
+            %
+%             self.helpers.reader.theObject.flushData()
+%             self.helpers.reader.theObject.setEventsActiveFlag(events)
             eventName = self.helpers.reader.readEvent(events, self, eventTag);
             
             % Nothing... keep checking
@@ -392,49 +994,98 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             
             % ---- Good choice!
             %
+            nextState='blank';
             % Override completedTrial flag
             self.completedTrial = true;
-            
-            % Jump to next state when done
-            nextState = 'blank';
-            
+                      
             % Get current task/trial
             trial = self.getTrial();
             
             % Save the choice
-            trial.choice = double(strcmp(eventName, 'choseRight'));
+            if strcmp(eventName, 'choseLeft') 
+                if trial.CPresponseSide == 0
+                    trial.cpChoice = 1;
+                else
+                    trial.cpChoice = 0;
+                end
+            else
+                if trial.CPresponseSide == 1
+                    trial.cpChoice = 1;
+                else
+                    trial.cpChoice = 0;
+                end
+            end
             
             % Mark as correct/error
             % jig changed direction to endDirection
-            trial.correct = double( ...
-                (trial.choice==0 && trial.endDirection==180) || ...
-                (trial.choice==1 && trial.endDirection==0));
+            trial.cpCorrect = double( ...
+                (trial.cpChoice==0 && ~self.isCP) || ...
+                (trial.cpChoice==1 && self.isCP));
             
             % Compute/save RT, wrt dotsOff for non-RT
-            trial.RT = trial.choiceTime - trial.dotsOff;
-            
+            trial.cpRT = trial.cpChoiceTime - trial.startResponseTwo;
             
             % ---- Re-save the trial
             %
             self.setTrial(trial);
             
             % ---- Possibly show smiley face
-            if trial.correct == 1 && self.timing.showSmileyFace > 0
+            if (trial.cpCorrect * trial.dirCorrect == 1) && self.timing.showSmileyFace > 0
                 self.helpers.stimulusEnsemble.draw({3, [1 2 4]});
                 pause(self.timing.showSmileyFace);
             end
         end
         
-        %% Launch first epoch of dots stimulus
+        %% Switch dots direction at change point
         %
         % this function gets called, via its handle, in an fevalable of the
         % state machine. It is the 'entry' function of a state. It does the
         % following: switch direction of dots
         function switchDots(self)
-            % switch dots direction
             trial=self.getTrial();
             self.helpers.stimulusEnsemble.theObject.setObjectProperty(...
                 'direction', trial.endDirection, 4)
+        end
+        
+        %% dump dots positions and states 
+        % by state I mean whether each dot is active or not on a particular
+        % frame, and whether it is coherent or not, on a particular frame
+        function dumpDots(self)
+            if self.settings.recordDotsPositions
+                self.dotsInfo.dotsPositions{self.trialCount} = ...
+                    self.helpers.stimulusEnsemble.theObject.getObjectProperty(...
+                    'dotsPositions', 4);
+                self.dotsInfo.dumpTime{self.trialCount} = feval(self.clockFunction);
+            end
+        end
+        
+        %% dump dotsOn with toc function
+        % function will be used as exit function of state "preDots" in
+        % statelist
+        function tocDotsOn(self)
+            trial = self.getTrial();
+            trial.tocDotsOn = toc;
+            self.setTrial(trial);
+        end
+        
+        %% dump dotsOff with toc function
+        % function will be used as exit function of state "showDotsEpoch1"
+        % in statelist
+        function tocDotsOffEpoch1(self) 
+            if ~self.isCP % only execute if no CP in this trial
+                trial = self.getTrial();
+                trial.tocDotsOff = toc;
+                self.setTrial(trial);
+            end
+        end
+        
+        %% dump dotsOff with toc function
+        % function will be used as exit function of state "switchDots"
+        % in statelist
+        function tocDotsOffEpoch2(self)
+            trial = self.getTrial();
+            trial.tocDotsOff = toc;
+            self.setTrial(trial);
         end
         
         %% Show feedback
@@ -445,18 +1096,12 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             trial = self.getTrial();
             
             % Set up feedback based on outcome
-            if trial.correct == 1
-                feedbackStr = 'Correct';
-                feedbackArgs = { ...
-                    'image', self.settings.correctImageIndex, ...
-                    'sound', self.settings.correctPlayableIndex};
-            elseif trial.correct == 0
-                feedbackStr = 'Error';
-                feedbackArgs = { ...
-                    'image', self.settings.errorImageIndex, ...
-                    'sound', self.settings.errorPlayableIndex};
+            if ~isnan(trial.dirCorrect)
+                feedbackStr = ['dir ans ', num2str(trial.dirChoice), ...
+                    ' cp ans ', num2str(trial.cpChoice)]; 
+                
             else
-                feedbackArgs = {'text', 'No choice'};
+%                 feedbackArgs = {'text', 'No choice'};
                 feedbackStr = 'No choice';
             end
             
@@ -464,11 +1109,20 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             %
             % jig changed direction to endDirection
             self.statusStrings{2} = ...
-                sprintf('Trial %d/%d, dir=%d, coh=%.0f: %s, RT=%.2f', ...
-                self.trialCount, numel(self.trialData)*self.trialIterations, ...
-                trial.endDirection, trial.coherence, feedbackStr, trial.RT);
-            self.updateStatus(2); % just update the second one
-            
+                sprintf('Trial %d/%d, end dir=%d, coh=%.0f: %s, dirRT=%.2f, cpRT=%.2f ', ...
+                self.trialCount, ...
+                numel(self.trialData), ...
+                trial.endDirection, ...
+                trial.coherence, ...
+                feedbackStr, ...
+                trial.dirRT, ...
+                trial.cpRT);
+            if self.settings.deactivateConsoleStatus
+                % Possibly update the gui using the new task
+                self.caller.updateGUI('_updateTaskStatus', self, 2);
+            else
+                self.updateStatus(2); % just update the second one
+            end
             % --- Show trial feedback on the screen
             %
             % self.helpers.feedback.show(feedbackArgs{:});
@@ -479,7 +1133,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
         % pcors is list of proportion correct values
         %  if given, find associated coherences from QUEST Weibull
         %  Parameters are: threshold, slope, guess, lapse
-        
+        % NOTE: it is possible to enhance this function by fitting a
+        % psychometric function (with Quest) to the data collected during
+        % the Quest node.
         function threshold = getQuestThreshold(self, pcors)
             
             % Find values from PMF
@@ -489,34 +1145,40 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             if ~isempty(psiParamsQuest)
                 
                 if nargin < 2 || isempty(pcors)
-                    
                     % Just return threshold in units of % coh
-                    threshold = psiParamsQuest(1,1);
-                else
-                    
-                    % Compute PMF with fixed guess and no lapse
-                    cax = (0:0.1:100);
-                    predictedProportions =100*qpPFWeibull(cax', [psiParamsQuest(1,1:3) 0]);
-                    threshold = nans(size(pcors));
-                    for ii = 1:length(pcors)
-                        Lp = predictedProportions(:,2)>=pcors(ii);
-                        if any(Lp)
-                            threshold(ii) = cax(find(Lp,1));
-                        end
-                    end
+                    threshold = psiParamsQuest(1);
                 end
             end
-            
-            % Convert to % coherence
-            threshold = 10^(threshold./20).*100;
         end
         
         %% Get next coherences guess from Quest
         %
         function coh = getQuestGuess(self)
-            
             self.questSettings.recentGuess = qpQuery(self.quest);
-            coh = min(100, max(0, 10^(self.questSettings.recentGuess/20)*100));
+            coh = min(100, max(0, self.questSettings.recentGuess));
+        end
+        
+        %% Get coherence value corresponding to any desired percent corr.
+        function desired_coh = getQuestCoh(self, pcorr)
+            % pcorr         is percent correct between 0.5 and 1
+            % desired_coh   is the desired coherence level, in %
+             
+            % Find values from PMF
+            psiParamsIndex = qpListMaxArg(self.quest.posterior);
+            
+            psiParamsQuest = self.quest.psiParamsDomain(psiParamsIndex,:); 
+            
+            % Compute PMF with fixed guess and no lapse
+            desired_coh =qpPFStandardWeibullInv(pcorr, psiParamsQuest);
+            
+            % convert back to correct scale (mQUESTPlus uses dB)
+            % desired_coh = 10^(desired_coh/20);
+        end
+        
+        %% Change color of fixation symbol to blue
+        function changeFixationColor(self, rgbCol)
+            ensemble = self.helpers.stimulusEnsemble.theObject;
+            ensemble.setObjectProperty('colors', rgbCol, 1);
         end
     end
     
@@ -555,6 +1217,21 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Set a new seed base for the dots random-number process
             %
             trial.randSeedBase = randi(9999);
+            
+            
+            % CP targets assigned randomly
+            if rand < 0.5
+                ensemble.setObjectProperty('string', 'switch', 5);     % switch response on left
+                ensemble.setObjectProperty('string', 'no switch', 6);  % no switch response on right
+                trial.CPresponseSide = 0;
+            else
+                ensemble.setObjectProperty('string', 'switch', 6);     % switch response on right
+                ensemble.setObjectProperty('string', 'no switch', 5);  % no switch response on left
+                trial.CPresponseSide = 1;
+            end
+            
+  
+            % save trial struct
             self.setTrial(trial);
             
             % ---- Save dots properties
@@ -562,14 +1239,23 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ensemble.setObjectProperty('randBase',  trial.randSeedBase, 4);
             ensemble.setObjectProperty('coherence', trial.coherence, 4);
             ensemble.setObjectProperty('direction', trial.initDirection, 4);
+            ensemble.setObjectProperty('recordDotsPositions', self.settings.recordDotsPositions, 4);
+            ensemble.setObjectProperty('colors', [1 0 0], 1); % reset fixation color to red
+            
+
             
             % ---- Possibly update smiley face to location of correct target
             %
             if self.timing.showSmileyFace > 0
-                
-                % Set x,y
-                ensemble.setObjectProperty('x', fpX + sign(cosd(trial.endDirection))*td, 3);
-                ensemble.setObjectProperty('y', fpY, 3);
+                if strcmp(self.name, 'Tut3')
+                    % Set x,y
+                    ensemble.setObjectProperty('x', fpX, 3);
+                    ensemble.setObjectProperty('y', fpY, 3);
+                else
+                    % Set x,y
+                    ensemble.setObjectProperty('x', fpX + sign(cosd(trial.endDirection))*td, 3);
+                    ensemble.setObjectProperty('y', fpY, 3);
+                end
             end
             
             % ---- Prepare to draw dots stimulus
@@ -577,11 +1263,27 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             ensemble.callObjectMethod(@prepareToDrawInWindow);
         end
         
+        %% Prepare readables for this trial
+        %
+        function prepareReadables(self)
+         
+            % ---- Inactivate all of the readable events
+            %
+            self.helpers.reader.theObject.deactivateEvents();
+        end   
         
         %% Prepare stateMachine for this trial
         %
         function prepareStateMachine(self)
             % empty function
+        end
+        
+        function flushEventsQueue(self)
+            numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            while numEventsInQueue > 0
+                self.helpers.reader.theObject.dequeueEvent(false);
+                numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            end
         end
         
         %% Initialize StateMachine
@@ -594,21 +1296,29 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             blanks  = {@dotsTheScreen.blankScreen};
             chkuif  = {@getNextEvent, self.helpers.reader.theObject, false, {'holdFixation'}};
             chkuib  = {}; % {@getNextEvent, self.readables.theObject, false, {}}; % {'brokeFixation'}
-            chkuic  = {@checkForChoice, self, {'choseLeft' 'choseRight'}, 'choiceTime'};
+            chkuic  = {@checkForDirChoice, self, {'choseLeft' 'choseRight'}, 'dirChoiceTime'};
+            chkuic2  = {@checkForReleaseDirChoice, self, {'choseLeft' 'choseRight'}, 'dirReleaseChoiceTime'};
+            chkuid  = {@checkForCPChoice, self, {'choseLeft' 'choseRight'}, 'cpChoiceTime'};
             showfx  = {@draw, self.helpers.stimulusEnsemble, {{'colors', ...
-                [1 1 1], 1}, {'isVisible', true, 1}, {'isVisible', false, [2 3 4]}},  self, 'fixationOn'};
+                [1 0 0], 1}, {'isVisible', true, 1}, {'isVisible', false, [2 3 4 5 6]}},  self, 'fixationOn'};
+            cpopts  = {@draw, self.helpers.stimulusEnsemble, {{'colors', ...
+                [1 1 1], 1}, {'isVisible', true, [5 6]}, {'isVisible', false, [1 2 3 4]}},  self, 'startResponseTwo'};
             showt   = {@draw, self.helpers.stimulusEnsemble, {2, []}, self, 'targetOn'};
             showfb  = {@showFeedback, self};
             showdFX = {@draw, self.helpers.stimulusEnsemble, {4, []}, self, 'dotsOn'};
-            % jig added self
             switchd = {@switchDots self};
             hided   = {@draw, self.helpers.stimulusEnsemble, {[], [1 4]}, self, 'dotsOff'};
+            dumpdots = {@dumpDots, self};
+
+            chgfxcb = {@changeFixationColor, self, [0 0 1]}; % set fixation to blue
+%             chgfxcr = {@changeFixationColor, self, [1 0 0]}; % set fixation to red
             
             % recall this function's signature from topsTreeNodeTopNode
             % setNextState(self, condition, thisState, nextStateIfTrue, nextStateIfFalse)
             % thus, the function below sets the 'next' state of the 'showDotsEpoch1'
             % state
             pdbr    = {@setNextState, self, 'isCP', 'showDotsEpoch1', 'switchDots', 'waitForChoiceFX'};
+%             blabla  = {@setNextState, self, 'isDualReport', 'waitForChoiceFX', 'blank1', 'blank'};
             
             % drift correction
             hfdc  = {@reset, self.helpers.reader.theObject, true};
@@ -618,6 +1328,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             gwfxw = {sea, self.helpers.reader.theObject, 'holdFixation'};
             gwfxh = {};
             gwts  = {sea, self.helpers.reader.theObject, {'choseLeft', 'choseRight'}, 'holdFixation'};
+            flsh = {@flushData, self.helpers.reader.theObject};
+            dque = {@flushEventsQueue, self};
+%             gwcp  = {sea, self.helpers.reader.theObject, {'choseNOCP', 'choseCP'}};
             
             % ---- Timing variables, read directly from the timing property struct
             %
@@ -631,19 +1344,22 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             %  - removed showDotsEpoch2 state, which could be consolidated
             %        with switchDots
             states = {...
-                'name'              'entry'  'input'  'timeout'                'exit'  'next'            ; ...
-                'showFixation'      showfx   {}       0                         pdbr    'waitForFixation' ; ...
-                'waitForFixation'   gwfxw    chkuif   t.fixationTimeout         {}      'blankNoFeedback' ; ...
-                'holdFixation'      gwfxh    chkuib   t.holdFixation            hfdc    'showTargets'     ; ...
-                'showTargets'       showt    chkuib   t.preDots                 gwts    'preDots'         ; ...
-                'preDots'           {}       {}       0                         {}      'showDotsEpoch1'  ; ...
-                'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}      ''                ; ...
-                'switchDots'        switchd  {}       t.dotsDuration2           {}      'waitForChoiceFX' ; ...
-                'waitForChoiceFX'   hided    chkuic   t.choiceTimeout           {}      'blank'           ; ...
-                'blank'             {}       {}       0.1                       blanks  'showFeedback'    ; ...
-                'showFeedback'      showfb   {}       t.showFeedback            blanks  'done'            ; ...
-                'blankNoFeedback'   {}       {}       0                         blanks  'done'            ; ...
-                'done'              dnow     {}       t.interTrialInterval      {}      ''                ; ...
+                'name'              'entry'  'input'  'timeout'                'exit'    'next'            ; ...
+                'showFixation'      showfx   {}       0                         pdbr     'waitForFixation' ; ...
+                'waitForFixation'   gwfxw    chkuif   t.fixationTimeout         {}       'blankNoFeedback' ; ...
+                'holdFixation'      gwfxh    chkuib   t.holdFixation            hfdc     'showTargets'     ; ...
+                'showTargets'       showt    chkuib   t.preDots                 gwts     'preDots'         ; ...
+                'preDots'           chgfxcb  {}       0                         {}       'showDotsEpoch1'  ; ...
+                'showDotsEpoch1'    showdFX  {}       t.dotsDuration1           {}       ''                ; ...
+                'switchDots'        switchd  {}       t.dotsDuration2           {}       'waitForChoiceFX' ; ...
+                'waitForChoiceFX'   hided    chkuic   t.dirChoiceTimeout        {}       ''                ; ...
+                'waitForReleasFX'   {}       chkuic2  t.dirChoiceTimeout        {}       ''                ; ...
+                'blank1'            blanks   {}       0.2                       dque    'waitForChoiceCP' ; ...
+                'waitForChoiceCP'   cpopts   chkuid   t.cpChoiceTimeout         {}       'blank'           ; ...
+                'blank'             blanks   {}       0.1                       flsh     'showFeedback'    ; ...
+                'showFeedback'      showfb   {}       t.showFeedback            blanks   'done'            ; ...
+                'blankNoFeedback'   {}       {}       0                         blanks   'done'            ; ...
+                'done'              dnow     {}       t.interTrialInterval      dumpdots ''                ; ...
                 };
             
             % ---- Set up ensemble activation list. This determines which
@@ -691,16 +1407,16 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             %  2. Text string #1
             %  3. RTFeedback flag
             %
-            SATsettings = { ...
-                'S' 'Be as FAST as possible.'                 task.settings.referenceRT; ...
-                'A' 'Be as ACCURATE as possible.'             nan;...
-                'N' 'Be as FAST and ACCURATE as possible.'    nan};
-            
-            dp = task.settings.directionPriors;
-            BIASsettings = { ...
-                'L' 'Left is more likely.'                    [max(dp) min(dp)]; ...
-                'R' 'Right is more likely.'                   [min(dp) max(dp)]; ...
-                'N' 'Both directions are equally likely.'     [50 50]};
+%             SATsettings = { ...
+%                 'S' 'Be as FAST as possible.'                 task.settings.referenceRT; ...
+%                 'A' 'Be as ACCURATE as possible.'             nan;...
+%                 'N' 'Be as FAST and ACCURATE as possible.'    nan};
+%             
+%             dp = task.settings.directionPriors;
+%             BIASsettings = { ...
+%                 'L' 'Left is more likely.'                    [max(dp) min(dp)]; ...
+%                 'R' 'Right is more likely.'                   [min(dp) max(dp)]; ...
+%                 'N' 'Both directions are equally likely.'     [50 50]};
             
             % For instructions
             %          if strcmp(name, 'Quest')
@@ -710,9 +1426,8 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % ---- Set strings, priors based on type
             % NOTE: 3 lines below are hard-coded for now, just to get the task
             % to run. Should be improved in the future
-            task.settings.textStrings = {SATsettings{2, 2}, BIASsettings{3, 2}};
+%             task.settings.textStrings = {SATsettings{2, 2}, BIASsettings{3, 2}};
             task.settings.referenceRT = nan;
-            task.setIndependentVariableByName('initDirection', 'priors', [50 50]);
         end
     end
 end
