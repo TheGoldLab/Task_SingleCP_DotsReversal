@@ -37,6 +37,50 @@
 				"reward": 0,
 				"numTrials": 1
 			}
+		},
+		"session3": {
+			"trialFolder": "Blocks003",
+			"sessionTag": "2019_06_18_15_34",
+			"Tut1": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 0
+			}
+		}
+	},
+	"b991a080a6ac68dfc5c7145c4b1b1557": {
+		"session1": {
+			"trialFolder": "Blocks003",
+			"sessionTag": "2019_06_18_15_22",
+			"Tut1": {
+				"completed": 1,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 2
+			},
+			"Quest": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 0
+			},
+			"Tut2": {
+				"completed": 1,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 1
+			}
+		},
+		"session2": {
+			"trialFolder": "Blocks003",
+			"sessionTag": "2019_06_18_15_27",
+			"Block2": {
+				"completed": 0,
+				"aborted": 1,
+				"reward": 0,
+				"numTrials": 1
+			}
 		}
 	}
 }
