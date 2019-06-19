@@ -1,6 +1,7 @@
 function [bsqCell, kvPairs]=suggestBlockSequence(sc)
 % based on an analysis of the subject sessions metadata, generates a 
 % block sequence
+% NOTE: if subject is new, a new entry is created in metadata file
 
 % display what the subject has completed and what is left to complete
 sessionsTable = subjSummary(sc);
