@@ -8,7 +8,7 @@ filename = 'subj_metadata.json';
 ds = loadjson(filename);
 if isfield(ds, sc)
     currDs = ds.(sc);  % struct for this subject
-    if isempty(currDS)
+    if isempty(currDs)
         questParams=[];
         return
     end

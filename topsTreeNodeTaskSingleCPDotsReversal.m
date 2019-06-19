@@ -571,7 +571,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                     'values', self.questSettings.viewingDuration);      
             else % when we are running the task AFTER some prior Quest data has been recorded
                 questHighCoh = 100;
-
+                if isempty(self.questThreshold)
+                    self.questThreshold = getLatestQuestParams(self.settings.subjectCode);
+                end
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
                     [0, self.questThreshold, questHighCoh]);
