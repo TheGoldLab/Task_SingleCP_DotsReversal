@@ -647,8 +647,14 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                             trial = self.trialData(t);
                             if trial.coherence == 100
                                 trial_counter = trial_counter + 1;
-                                if trial.dirCorrect && trial.cpCorrect
-                                    full_correct_counter = full_correct_counter + 1;
+                                if trial.dirCorrect 
+                                    if ~isnan(trial.cpCorrect) 
+                                        if trial.cpCorrect
+                                            full_correct_counter = full_correct_counter + 1;
+                                        end
+                                    elseif strcmp(self.name, 'Block2')
+                                        full_correct_counter = full_correct_counter + 1;
+                                    end
                                 end
                             end
                         end
