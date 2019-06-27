@@ -574,6 +574,9 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
                 if isempty(self.questThreshold)
                     self.questThreshold = getLatestQuestParams(self.settings.subjectCode);
                 end
+                if isempty(self.questThreshold)
+                    error('No quest parameters found. One block of Quest at least must be completed.')
+                end
                 % Update independent variable struct using Quest's fit
                 self.setIndependentVariableByName('coherence', 'values', ...
                     [0, self.questThreshold, questHighCoh]);
