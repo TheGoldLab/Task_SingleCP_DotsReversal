@@ -1278,11 +1278,11 @@ classdef topsTreeNodeTaskSingleCPDotsReversal < topsTreeNodeTask
             % empty function
         end
         
+        
         function flushEventsQueue(self)
-            numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
-            while numEventsInQueue > 0
-                self.helpers.reader.theObject.dequeueEvent(false);
-                numEventsInQueue = self.helpers.reader.theObject.getNumberOfEvents();
+            [nextEvent, ~] = self.helpers.reader.theObject.getNextEvent();
+            while ~isempty(nextEvent)
+                [nextEvent, ~] = self.helpers.reader.theObject.getNextEvent();
             end
         end
         
