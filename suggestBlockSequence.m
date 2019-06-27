@@ -65,7 +65,7 @@ if size(sessionsTable, 1) > 0
     bsqCell=compulsory;
     
     % get the key-value pairs by trimming with the appropriate function
-    kvPairs = trimkvpairs(kvPairs, bsqCell);
+    kvPairs = buildkvpairs(kvPairs, bsqCell);
 else  % subject is new and new entry should be created in metadata file
     originalFile = loadjson('subj_metadata.json');
     originalFile.(sc) = struct();
