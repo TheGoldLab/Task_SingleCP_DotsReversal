@@ -35,6 +35,7 @@ cpDots1Task.taskID = 2;
 %cpDots1Task.loadTrials('trials.csv');
 
 cpDots1Task.independentVariables='CSVs/trials.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
+cpDots1Task.trialIterationMethod='sequential';
 
 % cpDots1Task.trialIterations = 2;
 % cpDots1Task.settings.useQuest = questTask;
@@ -49,5 +50,5 @@ topNode.addChild(cpDots1Task);
 
 % Run it
 topNode.run();
-topNode.children{1}.saveTrials('CSVs/completedTrials.csv', 'all');
+topNode.children{1}.saveTrials('CSVs/completedTrialsOrdered.csv', 'all');
 
