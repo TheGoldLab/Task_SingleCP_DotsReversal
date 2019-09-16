@@ -40,8 +40,13 @@ cpDots2Task.taskID = 3;
 cpDots2Task.independentVariables='trials2.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
 cpDots2Task.pauseBeforeTask = pauseBeforeTask;
 topNode.addChild(cpDots2Task);
+cpDots3Task = topsTreeNodeTaskReversingDots('cpDots2');
+cpDots3Task.taskID = 4;
+cpDots3Task.independentVariables='trials3.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
+cpDots3Task.pauseBeforeTask = pauseBeforeTask;
+topNode.addChild(cpDots3Task);
 % Run it
 topNode.run();
 topNode.children{1}.saveTrials('CSVs/completedTrials1.csv', 'all');
 topNode.children{2}.saveTrials('CSVs/completedTrials2.csv', 'all');
-
+topNode.children{3}.saveTrials('CSVs/completedTrials2.csv', 'all');
