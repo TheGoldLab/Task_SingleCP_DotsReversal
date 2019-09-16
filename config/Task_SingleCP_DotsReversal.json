@@ -3,16 +3,31 @@
 		"name": "Task_SingleCP_DotsReversal",
 		"type": "git",
 		"url": "https://github.com/TheGoldLab/Task_SingleCP_DotsReversal.git",
-	    "update": "never"
+                "update": "never"
 	},
-	{
-		"name": "Lab_Matlab_Control",
-		"type": "include",
-		"pathPlacement": "append"
-	},
-    {
-        "name": "DataHash_20190519",
-        "type": "local",
-        "url": "file:///Users/joshuagold/Documents/MATLAB/toolboxes/DataHash_20190519"
-    }
+        {
+                "name": "Lab_Matlab_Control",
+                "type": "git",
+                "flavor": "eyeDev",
+                "url": "https://github.com/TheGoldLab/Lab_Matlab_Control.git"
+        },
+        {
+                "name": "Lab_Matlab_Utilities",
+                "type": "include"
+        },
+        {
+                "name": "mQUESTPlus",
+                "type": "include"
+        },
+        {
+                "name": "mgl",
+                "type": "git",
+                "url": "https://github.com/justingardner/mgl.git",
+                "pathPlacement": "append"
+        },
+        {
+                "name": "DataHash_20190519",
+                "type": "local",
+                "url": "file:///Users/adrian/Documents/MATLAB/toolboxes/DataHash_20190519"
+        }
 ]
