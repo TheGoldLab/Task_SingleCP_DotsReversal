@@ -32,23 +32,16 @@ pauseBeforeTask = -1; % -1 means wait for keypress -- see topsTreeNode.pauseBefo
 % 2. CP dots, 600 ms dur
 cpDots1Task = topsTreeNodeTaskReversingDots('cpDots1');
 cpDots1Task.taskID = 2;
-%cpDots1Task.loadTrials('trials.csv');
-
-cpDots1Task.independentVariables='CSVs/trials.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
-cpDots1Task.trialIterationMethod='sequential';
-
-% cpDots1Task.trialIterations = 2;
-% cpDots1Task.settings.useQuest = questTask;
-%cpDots1Task.settings.valsFromQuest = [60 100]; % set to % cor values on pmf to get from Quest
-
-% cpDots1Task.independentVariables.reversal.values = 0.2;
-% cpDots1Task.independentVariables.duration.values = 0.4;
-
+cpDots1Task.independentVariables='trials.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
 cpDots1Task.pauseBeforeTask = pauseBeforeTask;
-
 topNode.addChild(cpDots1Task);
-
+cpDots2Task = topsTreeNodeTaskReversingDots('cpDots2');
+cpDots2Task.taskID = 3;
+cpDots2Task.independentVariables='trials2.csv';  % THIS CREATES A BUG (email sent at 2:07 on 6 Sep 2019)
+cpDots2Task.pauseBeforeTask = pauseBeforeTask;
+topNode.addChild(cpDots2Task);
 % Run it
 topNode.run();
-topNode.children{1}.saveTrials('CSVs/completedTrialsOrdered.csv', 'all');
+topNode.children{1}.saveTrials('CSVs/completedTrials1.csv', 'all');
+topNode.children{2}.saveTrials('CSVs/completedTrials2.csv', 'all');
 

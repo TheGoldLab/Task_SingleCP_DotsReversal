@@ -1,0 +1,5 @@
+direction,coherence,reversal,duration,finalDuration
+0,90,0.2,1,NaN
+180,90,0.2,1,NaN
+0,90,0.5,1,NaN
+180,90,0.5,1,NaN
