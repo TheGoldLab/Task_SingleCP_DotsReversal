@@ -13,11 +13,11 @@ import pandas as pd
 import json
 import hashlib
 
-ALLOWED_PROB_CP = {0, 0.2, 0.5, 0.8}  # overall probability of a change-point trial
+ALLOWED_PROB_CP = {0.3, 0.7}  # overall probability of a change-point trial
 CP_TIME = 200  # in msec
 MARGINALS_TEMPLATE = {
     'coh': {0: 0, 'th': 0, 100: 0},
-    'vd': {100: 0, 200: 0, 300: 0, 400: 0},
+    'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0},
     'dir': {'left': 0, 'right': 0},
     'cp': {True: 0, False: 0}
 }
@@ -69,7 +69,9 @@ def validate_marginal_keys(marg_type, marg_dict):
     :param marg_dict: (dict) dict representing the marginals for a single independent variable
     :return: None
     """
-    assert set(MARGINALS_TEMPLATE[marg_type].keys()) == set(marg_dict.keys())
+    k1 = MARGINALS_TEMPLATE[marg_type].keys()
+    k2 = marg_dict.keys()
+    assert set(k1) == set(k2), f'k1 {set(k1)}; k2 {set(k2)}'
 
 
 def validate_marginal_values(marg_dict, precision=1 / 10000000):
@@ -99,9 +101,11 @@ def get_marginals(df):
     :param df: dataframe of trials as returned by self.get_n_trials()
     :return: dict with same format than MARGINALS_TEMPLATE, but empirical probs as values
     """
+
+    # todo: generate this dict from MARGINALS_TEMPLATE!
     emp_marginals = {
         'coh': {0: 0, 'th': 0, 100: 0},
-        'vd': {100: 0, 200: 0, 300: 0, 400: 0},
+        'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0},
         'dir': {'left': 0, 'right': 0},
         'cp': {True: 0, False: 0}}
 
