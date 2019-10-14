@@ -122,6 +122,38 @@ def get_marginals(df):
     return emp_marginals
 
 
+def format2snowdots(df):
+    """
+    :param df: pandas.DataFrame produced by the Trials class
+    :return: pandas.DataFrame with column names and row values compatible with snow-dots (Lab_Matlab_Control v1.0.1)
+    """
+    assert set(df.columns) == {'cp', 'coh', 'dir', 'vd'}
+    # snowdots_cols = ('direction', 'coherence', 'reversal', 'duration', 'finalDuration')
+
+    # ref: https://stackoverflow.com/a/26887820
+    def convert_direction(row):
+        return 180 if row['dir'] == 'left' else 0
+    direction_series = df.apply(lambda row: convert_direction(row), axis=1)
+
+    def convert_coherence(row):
+        return -1 if row['coh'] == 'th' else row['coh'] 
+    coherence_series = df.apply(lambda row: convert_coherence(row), axis=1)
+
+    def convert_reversal(row):
+        return 0.2 if row['cp'] else 0
+    reversal_series = df.apply(lambda row: convert_reversal(row), axis=1)
+
+    snowdots_df = pd.DataFrame({
+        'direction': direction_series,
+        'coherence': coherence_series,
+        'reversal': reversal_series,
+        'duration': df['vd'] / 1000,
+        'finalDuration': pd.Series(['NaN']*len(direction_series))
+    })
+
+    return snowdots_df
+
+
 class Trials:
     """
     class to create data frames of trials
@@ -363,13 +395,17 @@ class Trials:
 
         return True
 
-    def save_to_csv(self, filename, with_meta_data=True):
+    def save_to_csv(self, filename, with_meta_data=True, snowdots_fmt=True):
         if self.trial_data is None:
             print('No data to write')
         else:
             check_extension(filename, 'csv')
 
-            self.trial_data.to_csv(filename, index=False)
+            if snowdots_fmt:
+                formatted_data = format2snowdots(self.trial_data)
+                formatted_data.to_csv(filename, index=False)
+            else:
+                self.trial_data.to_csv(filename, index=False)
             print(f"file {filename} created")
 
             if with_meta_data:
