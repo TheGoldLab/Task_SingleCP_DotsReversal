@@ -17,8 +17,8 @@ ALLOWED_PROB_CP = {0.3, 0.7}  # overall probability of a change-point trial
 CP_TIME = 200  # in msec
 MARGINALS_TEMPLATE = {
     'coh': {0: 0, 'th': 0, 100: 0},
-    'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0},
-    'dir': {'left': 0, 'right': 0},
+    'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0, 600: 0},
+    'dir': {'left': 0, 'right': 0},  # this is the initial direction of motion
     'cp': {True: 0, False: 0}
 }
 
@@ -105,7 +105,7 @@ def get_marginals(df):
     # todo: generate this dict from MARGINALS_TEMPLATE!
     emp_marginals = {
         'coh': {0: 0, 'th': 0, 100: 0},
-        'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0},
+        'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0, 600: 0},
         'dir': {'left': 0, 'right': 0},
         'cp': {True: 0, False: 0}}
 
@@ -136,7 +136,7 @@ def format2snowdots(df):
     direction_series = df.apply(lambda row: convert_direction(row), axis=1)
 
     def convert_coherence(row):
-        return -1 if row['coh'] == 'th' else row['coh'] 
+        return -1 if row['coh'] == 'th' else row['coh']
     coherence_series = df.apply(lambda row: convert_coherence(row), axis=1)
 
     def convert_reversal(row):
@@ -190,23 +190,22 @@ class Trials:
         trial_data
     """
     def __init__(self,
-                 prob_cp=0,
-                 num_trials=204,
+                 prob_cp=0.3,
+                 num_trials=820,  # 205 * 4
                  seed=1,
-                 coh_marginals={0: .4, 'th': .5, 100: .1},
-                 vd_marginals={100: .1, 200: .1, 300: .4, 400: .4},
-                 dir_marginals={'left': 0.5, 'right': 0.5},
+                 coh_marginals=((0, .4), ('th', .55), (100, .05)),
+                 vd_marginals=((100, .1), (200, .1), (250, .25), (300, .25), (400, .25), (600, .05)),
+                 dir_marginals=(('left', 0.5), ('right', 0.5)),
                  max_attempts=10000,
-                 marginal_tolerance=0.05,
+                 marginal_tolerance=0.02,
                  from_file=None):
         """
-
         :param prob_cp: theoretical proba of a CP trials over all trials
         :param num_trials: number of trials in the data attached to object
         :param seed: seed used to generate the data
-        :param coh_marginals: marginal probabilities for coherence values, across all trials
-        :param vd_marginals: marginal probabilities for viewing duration values, across all trials
-        :param dir_marginals: marginal probabilities for direction values, across all trials
+        :param coh_marginals: marginal probabilities for coherence values, across all trials. tuple to construct dict
+        :param vd_marginals: marginal prob for viewing duration values, across all trials. tuple as coh_marginals
+        :param dir_marginals: marginal probabilities for direction values, across all trials. tuple as coh_marginals
         :param max_attempts: max number of iterations to do to try to generate trials with correct statistics
         :param marginal_tolerance: tolerance in the empirical marginals of the generated trials
         :param from_file: filename to load data from. If None, data is randomly generated. If a filename is provided,
@@ -226,6 +225,10 @@ class Trials:
             np.random.seed(self.seed)
 
             # validate core marginals
+            coh_marginals = dict(coh_marginals)
+            vd_marginals = dict(vd_marginals)
+            dir_marginals = dict(dir_marginals)
+
             validate_marginal('coh', coh_marginals)
             validate_marginal('vd', vd_marginals)
             validate_marginal('dir', dir_marginals)
@@ -378,10 +381,12 @@ class Trials:
         we want at least five trials per Coh-VD pairs
         we don't want the empirical marginals to deviate from the theoretical ones by more than 5%
         """
+        # count Coh-VD pairs
         num_cohvd_pairs = np.sum(df.duplicated(subset=['coh', 'vd'], keep=False))
         if num_cohvd_pairs < 5:
             return False
 
+        # check deviation between empirical marginals and theoretical ones
         emp_marginals = get_marginals(df)
 
         for indep_var in emp_marginals.keys():
