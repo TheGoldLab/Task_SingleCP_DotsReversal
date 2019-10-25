@@ -18,7 +18,7 @@ CP_TIME = 200  # in msec
 MARGINALS_TEMPLATE = {
     'coh': {0: 0, 'th': 0, 100: 0},
     'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0, 600: 0},
-    'dir': {'left': 0, 'right': 0},  # this is the initial direction of motion
+    'dir': {'left': 0, 'right': 0},  # this is the FINAL direction of motion
     'cp': {True: 0, False: 0}
 }
 
@@ -106,7 +106,7 @@ def get_marginals(df):
     emp_marginals = {
         'coh': {0: 0, 'th': 0, 100: 0},
         'vd': {100: 0, 200: 0, 250: 0, 300: 0, 400: 0, 600: 0},
-        'dir': {'left': 0, 'right': 0},
+        'dir': {'left': 0, 'right': 0},  # this is the FINAL direction of motion
         'cp': {True: 0, False: 0}}
 
     assert set(emp_marginals.keys()) == set(MARGINALS_TEMPLATE.keys())
@@ -131,8 +131,10 @@ def format2snowdots(df):
     # snowdots_cols = ('direction', 'coherence', 'reversal', 'duration', 'finalDuration')
 
     # ref: https://stackoverflow.com/a/26887820
-    def convert_direction(row):
-        return 180 if row['dir'] == 'left' else 0
+    def convert_direction(row):  # initial direction depends on final direction and CP presence
+        dirmap = {'left': 180, 'right': 0}  # maps direction to angle
+        revdirmap = {'left': 0, 'right': 180}  # reversed mapping on purpose
+        return revdirmap[row['dir']] if row['cp'] else dirmap[row['dir']]
     direction_series = df.apply(lambda row: convert_direction(row), axis=1)
 
     def convert_coherence(row):
