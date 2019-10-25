@@ -441,11 +441,11 @@ if __name__ == '__main__':
     """
     todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
-    marg_tol = 0.01  # max deviation allowed between theoretical and empirical marginal probabilities
+    # marg_tol = 0.01  # max deviation allowed between theoretical and empirical marginal probabilities
     all_vals = list(ALLOWED_PROB_CP - {0})
 
     # number of blocks in total for the dual-report task
-    num_dual_report_blocks = 9
+    num_dual_report_blocks = 2
 
     # number of blocks to enforce for each prob_cp value (other than 0)
     # ensure the latter divides the former
@@ -463,7 +463,7 @@ if __name__ == '__main__':
         :return: list of prob_cp values
         """
         # build random ordering of prob_cp across blocks
-        last_idx = np.random.randint(3)  # draws a number at random in the set {0, 1, 2}
+        last_idx = np.random.randint(2)  # draws a number at random in the set {0, 1}
 
         num_vals = len(cp_vals)
         val_idxs = {i for i in range(num_vals)}
@@ -505,10 +505,10 @@ if __name__ == '__main__':
         print(f'prob cp list for dual-report blocks found after {counter} attempts')
         print(prob_cp_list)
 
-        dual_report_start_index = 3
-        block_length = 250  # number of trials to use for each block
+        dual_report_start_index = 0
+        # block_length = 250  # number of trials to use for each block
 
-        filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
+        filenames = []  # ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
         for idx in range(num_dual_report_blocks):
             filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
 
@@ -518,15 +518,6 @@ if __name__ == '__main__':
         for file in filenames:
             count += 1
 
-            # todo: deal with tutorials
-            if file[:3] == 'Tut':
-                pass
-            # deal with blocks
-            if file == 'Block2.csv':  # Block2 is the standard dots task
-                t = Trials(prob_cp=0, num_trials=block_length, seed=count, marginal_tolerance=marg_tol)
-                t.save_to_csv(file)
-            elif file[:5] == 'Block':  # the other ones are dual-report blocks
-                t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count,
-                           marginal_tolerance=marg_tol)
-                t.save_to_csv(file)
-                dual_report_block_count += 1
+            t = Trials(prob_cp=prob_cp_list[dual_report_block_count], seed=count)
+            t.save_to_csv(file)
+            dual_report_block_count += 1
