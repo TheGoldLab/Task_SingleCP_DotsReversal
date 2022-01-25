@@ -1,4 +1,4 @@
-function topNode = run_task(location, blockSequence, subjcode)
+function topNode = run_task(location)
 %% function [mainTreeNode, datatub] = run_task(location)
 %
 % run_task = Single Change Point Dots
@@ -8,12 +8,14 @@ function topNode = run_task(location, blockSequence, subjcode)
 %
 % 11/28/18   aer wrote it
 
-%% ---- Clear 
+%% ---- Clear globals
+%
+% umm, duh
 clear globals
 
 %% ---- Configure experiment based on location
 %
-%   locations are 'pilot', 'office', 'short', 'tutorial'
+%   locations are 'pilot', 'office', 'tutorial'
 %
 % UIs:
 %  'dotsReadableEyeEyelink'
@@ -24,21 +26,44 @@ clear globals
 %  'dotsReadableHIDButtons'
 %  'dotsReadableHIDGamepad'
 
-switch location      
-    case {'pilot'}
+switch location
+    case {'office' 'Office'}
         arglist = { ...
-            'taskSpecs',            blockSequence, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
-            'subjectCode',          subjcode, ...
-            'trialFolder',          'Blocks003/', ...  % folder where trial generation data resides
+            'taskSpecs',            {'Quest' 10 'Block1' 10 ...
+                                    'Block2' 10 'Block3' 10}, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
+            'readables',            {'dotsReadableHIDKeyboard'}, ...
+            'recordDotsPositions',  false, ...
+            'displayIndex',         0, ... % 0=small, 1=main, 2=other screen
+            'remoteDrawing',        false, ...
+            'sendTTLs',             false, ...
+            'showFeedback',         0, ... % timeout for feedback
+            'showSmileyFace',       0, ... % timeout for smiley face on correct target
+            };
+        
+    case {'pilot' 'Pilot'}
+        arglist = { ...
+            'taskSpecs',            {'Quest' 25 'CP' 1 'CP' 1}, ...%{'Quest' 30 'CP' 22}, ...
+            'probCPs',              [0 .5, .1], ... %this vector should be as long as there are task nodes.
             'readables',            {'dotsReadableHIDGamepad'}, ...
-            'deactivateConsoleStatus', true, ...  % if true, trial by trial status not shown in console
-            'recordDotsPositions',  true, ...
+            'recordDotsPositions',  false, ...
             'displayIndex',         2, ... % 0=small, 1=main, 2=other screen
             'remoteDrawing',        false, ...
             'sendTTLs',             false, ...
             'showFeedback',         0, ... % timeout for feedback
             'showSmileyFace',       0, ... % timeout for smiley face on correct target
-        };
+            };
+        
+    case {'tutorial' 'Tutorial'}
+        arglist = { ...
+            'taskSpecs',            {'CP' 10}, ...%{'Quest' 50 'SN' 50 'AN' 50}, ...
+            'probCPs',              .5, ... %this vector should be as long as there are task nodes.
+            'readables',            {'dotsReadableHIDKeyboard'}, ...
+            'displayIndex',         2, ... % 0=small, 1=main, 2=other screen
+            'remoteDrawing',        false, ...
+            'sendTTLs',             false, ...
+            'showFeedback',         0.5, ... % timeout for feedback
+            'showSmileyFace',       0.5, ... % timeout for smiley face on correct target
+            };
 end
 
 %% ---- Call the configuration routine

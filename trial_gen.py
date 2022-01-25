@@ -3,7 +3,7 @@ This module is designed to generate trials for our task with the
 correct statistics
 
 Example usage:
-  >>>> trials = Trials(prob_cp=0.8, num_trials=204, marginal_tolerance=0.02)
+  >>>> trials = Trials(0.8, 204, marginal_tolerance=0.02)
   >>>> trials.attempt_number
   >>>> trials.save_to_csv('/foo/bar.csv')  # a .json file gets created for meta data
   >>>> reloaded_trials = Trials(from_file='/foo/bar.csv')  # also loads meta data from .json file
@@ -13,7 +13,7 @@ import pandas as pd
 import json
 import hashlib
 
-ALLOWED_PROB_CP = {0, 0.2, 0.5, 0.8}  # overall probability of a change-point trial
+ALLOWED_PROB_CP = {0.2, 0.5, 0.8}  # overall probability of a change-point trial
 CP_TIME = 200  # in msec
 MARGINALS_TEMPLATE = {
     'coh': {0: 0, 'th': 0, 100: 0},
@@ -121,37 +121,6 @@ def get_marginals(df):
 class Trials:
     """
     class to create data frames of trials
-
-    Note, this class may be instantiated in two ways, controlled by the from_file kwarg to the __init__ method.
-    These ways result in a slightly distinct attribute list for this class. What should always be true, is that any
-    attribute appearing when the object is 'loaded from file' should also exist when the object is 'generated'.
-    We list below the attributes in these two cases, as of 03 June 2019
-    generated:
-        attempt_number
-        combinations
-        cond_prob_cp
-        csv_filename
-        csv_md5
-        empirical_marginals
-        loaded_from_file
-        marginal_tolerance
-        num_trials
-        prob_cp
-        seed
-        theoretical_marginals
-        trial_data
-    loaded:
-        cond_prob_cp
-        csv_filename
-        csv_md5
-        empirical_marginals
-        loaded_from_file
-        marginal_tolerance
-        num_trials
-        prob_cp
-        seed
-        theoretical_marginals
-        trial_data
     """
     def __init__(self,
                  prob_cp=0,
@@ -176,9 +145,11 @@ class Trials:
         :param from_file: filename to load data from. If None, data is randomly generated. If a filename is provided,
                           it should have a .csv extension and a corresponding metadata file with name equal to standard_
                           meta_filename(filename) should exist. Note that if data and meta_data are loaded from files,
-                          all other kwargs provided to __init__ will be overriden by self._load_from_file()
+                          all other kwargs provided to __init__ will be overriden by self.load_from_file()
         """
         if from_file is None:
+            # todo: make sure the list of attributes is the same whether loaded from file or not. Right now, csv_md5 at least is missing.
+
             self.loaded_from_file = False
 
             assert 0 < marginal_tolerance < 1
@@ -253,16 +224,12 @@ class Trials:
                       f'trial generation failed. You may try again with another seed,\n'
                       f'or increase the max_attempts argument')
                 self.trial_data = None  # generation failed
-                self.num_trials = 0
             else:
                 self.trial_data = trial_df
-                self.num_trials = len(trial_df)
 
             self.attempt_number = attempt
-            self.csv_md5 = None
-            self.csv_filename = None
         else:
-            self._load_from_file(from_file)
+            self.load_from_file(from_file)
 
     @staticmethod
     def load_meta_data(filename):
@@ -300,7 +267,7 @@ class Trials:
         assert Trials.load_meta_data(meta_filename)['csv_md5'] == md5(csv_filename), 'MD5 check failed!'
         print('MD5 verified!')
 
-    def _load_from_file(self, fname, meta_file=None):
+    def load_from_file(self, fname, meta_file=None):
         """
         load full object from .csv file and its corresponding metadata file
         :param fname: (str) path to csv file
@@ -367,12 +334,11 @@ class Trials:
 
             self.trial_data.to_csv(filename, index=False)
             print(f"file {filename} created")
-
             if with_meta_data:
                 meta_filename = standard_meta_filename(filename)
                 meta_dict = {
                     'seed': self.seed,
-                    'num_trials': self.num_trials,
+                    'num_trials': len(self.trial_data),
                     'prob_cp': self.prob_cp,
                     'cond_prob_cp': self.cond_prob_cp,
                     'theoretical_marginals': self.theoretical_marginals,
@@ -394,92 +360,12 @@ if __name__ == '__main__':
     """
     todo: creates N blocks of trials per prob_cp value, gives standardized names to files  
     """
-    marg_tol = 0.01  # max deviation allowed between theoretical and empirical marginal probabilities
-    all_vals = list(ALLOWED_PROB_CP - {0})
+    num_dual_report_blocks = 15
+    dual_report_start_index = 3
+    filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
+    for idx in range(num_dual_report_blocks):
+        filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
+    
+    
 
-    # number of blocks in total for the dual-report task
-    num_dual_report_blocks = 9
-
-    # number of blocks to enforce for each prob_cp value (other than 0)
-    # ensure the latter divides the former
-    assert np.mod(num_dual_report_blocks, len(all_vals)) == 0
-    num_blocks_single_prob_cp = num_dual_report_blocks / len(all_vals)
-
-    def gen_rand_prob_cp_seq(cp_vals, tot_num_blocks):
-        """
-        Generates a random sequence of prob_cp values to assign to each block.
-        In effect, samples a path from a len(cp_vals)-state Discrete Time Markov Chain
-        where the prob of transitioning from one state to itself is 0 for all states,
-        and the probability of transitioning from one state to any other state is uniform.
-        :param cp_vals: list of possible prob_cp values
-        :param tot_num_blocks: total number of blocks
-        :return: list of prob_cp values
-        """
-        # build random ordering of prob_cp across blocks
-        last_idx = np.random.randint(3)  # draws a number at random in the set {0, 1, 2}
-
-        num_vals = len(cp_vals)
-        val_idxs = {i for i in range(num_vals)}
-
-        prob_list = [cp_vals[last_idx]]
-
-        for r in range(tot_num_blocks - 1):
-            new_idxs = list(val_idxs - {last_idx})    # update allowed indices for this block (enforce a transition)
-            last_idx = new_idxs[np.random.randint(num_vals - 1)]  # pick one of the other two indices at random
-            prob_list.append(all_vals[last_idx])
-
-        return prob_list
-
-    def validate_prob_cp_seq(seq, num_blocks, num_blocks_seq, cp_vals):
-        assert len(seq) == num_blocks
-        for prob_cp in cp_vals:
-            cc = 0  # counter
-            for s in seq:
-                if s == prob_cp:
-                    cc += 1
-            if cc != num_blocks_seq:
-                return False
-        return True
-
-    prob_cp_list = [0 for _ in range(num_dual_report_blocks)]
-    maxout = 1000  # total number of iterations allowed for the following while loop
-    counter = 0
-    while not validate_prob_cp_seq(prob_cp_list, num_dual_report_blocks, num_blocks_single_prob_cp, all_vals):
-        prob_cp_list = gen_rand_prob_cp_seq(all_vals, num_dual_report_blocks)
-        counter += 1
-        # print('all_vals', all_vals)
-        # print('num_dual_report_blocks', num_dual_report_blocks)
-        # print('prob_cp_list', prob_cp_list)
-        # print('counter in while loop', counter)
-        if counter == maxout:
-            print(f"after {counter} attempts, not proper prob_cp list was reached")
-            break
-    else:
-        print(f'prob cp list for dual-report blocks found after {counter} attempts')
-        print(prob_cp_list)
-
-        dual_report_start_index = 3
-        block_length = 250  # number of trials to use for each block
-
-        filenames = ['Tut1.csv', 'Tut2.csv', 'Block2.csv', 'Tut3.csv']
-        for idx in range(num_dual_report_blocks):
-            filenames.append('Block' + str(idx + dual_report_start_index) + '.csv')
-
-        count = 0
-        dual_report_block_count = 0
-
-        for file in filenames:
-            count += 1
-
-            # todo: deal with tutorials
-            if file[:3] == 'Tut':
-                pass
-            # deal with blocks
-            if file == 'Block2.csv':  # Block2 is the standard dots task
-                t = Trials(prob_cp=0, num_trials=block_length, seed=count, marginal_tolerance=marg_tol)
-                t.save_to_csv(file)
-            elif file[:5] == 'Block':  # the other ones are dual-report blocks
-                t = Trials(prob_cp=prob_cp_list[dual_report_block_count], num_trials=block_length, seed=count,
-                           marginal_tolerance=marg_tol)
-                t.save_to_csv(file)
-                dual_report_block_count += 1
+               
