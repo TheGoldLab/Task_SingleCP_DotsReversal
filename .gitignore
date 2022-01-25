@@ -1,0 +1,7 @@
+*.DS_Store
+data/*
+.idea/*
+__pycache__/*
+Blocks001/*
+Blocks002/*
+Blocks003/*
